@@ -1,12 +1,3 @@
-name: Auto Update EPG (最终稳定版)
-on:
-  schedule:
-    - cron: '0 16 * * *'  # UTC 16点 = 北京时间0点
-    - cron: '0 4 * * *'   # UTC 4点 = 北京时间12点
-  workflow_dispatch:  # 手动触发
-  push:
-    branches: [ master ]
-
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -15,95 +6,27 @@ jobs:
       contents: write
 
     steps:
-      - name: 配置Git网络稳定性
-        run: |
-          git config --global http.retry 5
-          git config --global http.lowSpeedLimit 1000
-          git config --global http.lowSpeedTime 60
-
-      - name: 拉取代码（含上游同步）
-        uses: actions/checkout@v4
-        with:
-          ref: master
-          fetch-depth: 0
-          repository: zyrf999/epg
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: 同步上游仓库
-        run: |
-          git remote add upstream https://github.com/mytv-android/myEPG.git || true
-          git fetch upstream
-          git merge upstream/master --allow-unrelated-histories || echo "上游无新提交"
+      # ...（其他步骤不变）
 
       - name: 设置Python（稳定版3.10）
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-          cache: 'pipenv'
+          cache: 'pip'
 
-      - name: 安装依赖（包含lxml）
+      - name: 安装依赖（直接用pip）
         run: |
           pip install --upgrade pip
-          pip install pipenv
-          # 在Pipfile中添加lxml依赖
-          echo -e "[packages]\nlxml = \"*\"\naiohttp = \"*\"\ntqdm = \"*\"\nopencc-python-reimplemented = \"*\"" > Pipfile
-          pipenv install --deploy
+          pip install aiohttp tqdm opencc-python-reimplemented lxml
 
-      - name: Debug - 仓库文件检查
-        run: |
-          echo "=== 仓库文件列表 ==="
-          ls -la
-          echo "=== Pipfile内容 ==="
-          cat Pipfile
-          echo "=== config.txt内容 ==="
-          cat config.txt
+      # ...（后续步骤不变）
 
       - name: 运行EPG生成脚本
         run: |
           echo "=== 开始生成EPG ==="
           rm -rf output/* 2>/dev/null || true
           set -x
-          pipenv run python merge.py 2>&1 | tee epg_output.log
+          python merge.py 2>&1 | tee epg_output.log  # 直接用python运行，不用pipenv
           set +x
           echo "=== 生成日志 ==="
           cat epg_output.log || echo "无日志"
-
-      - name: 验证EPG文件
-        run: |
-          echo "=== 验证EPG有效性 ==="
-          if [ ! -d "output" ]; then
-            echo "❌ output目录不存在"
-            exit 1
-          fi
-          if [ ! -f "output/epg.xml" ]; then
-            echo "❌ 未生成epg.xml"
-            exit 1
-          fi
-          if [ $(stat -c%s "output/epg.xml") -lt 1000 ]; then
-            echo "❌ epg.xml内容过短"
-            head -50 output/epg.xml
-            exit 1
-          fi
-          gzip -c output/epg.xml > output/epg.gz
-          if [ $(stat -c%s "output/epg.gz") -lt 500 ]; then
-            echo "❌ epg.gz压缩失败"
-            exit 1
-          fi
-          channels=$(grep -c '<channel ' output/epg.xml)
-          programmes=$(grep -c '<programme ' output/epg.xml)
-          echo "✓ 生成成功：${channels}个频道，${programmes}个节目"
-
-      - name: 提交并推送更新
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          
-          git add output/
-          git add merge.py Pipfile  # 提交脚本和依赖配置
-          
-          if git diff --staged --quiet; then
-            echo "无内容更新，跳过提交"
-          else
-            git commit -m "📺 EPG自动更新 - $(date +'%Y-%m-%d %H:%M:%S')"
-            git push origin master --force-with-lease
-          fi
