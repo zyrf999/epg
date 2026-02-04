@@ -29,15 +29,6 @@ logging.basicConfig(
     ]
 )
 
-# 频道名→标准数字ID映射（与播放器logo匹配）
-COOL9_ID_MAPPING = {
-    "山东卫视": "89", "山东教育": "221", "山东新闻": "381", 
-    "山东农科": "382", "山东齐鲁": "383", "山东文旅": "384",
-    "CCTV1": "1", "CCTV2": "2", "CCTV3": "3", "CCTV4": "4", 
-    "CCTV5": "5", "CCTV6": "6", "CCTV7": "7", "CCTV8": "8",
-    "CCTV9": "9", "CCTV10": "10"
-}
-
 # 国外频道关键词黑名单（命中则过滤）
 FOREIGN_KEYWORDS = [
     "BBC", "CNN", "NBC", "FOX", "HBO", "Netflix", "Disney",
@@ -56,7 +47,7 @@ class EPGGenerator:
         self.channel_ids: Set[str] = set()  # 去重频道ID
         self.all_channels: List = []        # 所有保留的频道
         self.all_programs: List = []        # 所有保留的节目单
-        self.name_to_final_id = dict()      # 频道名称→最终数字ID 映射
+        self.name_to_final_id = dict()      # 频道名称→最终ID 映射
         self.program_channel_map = dict()   # 临时存储节目单channel映射
 
     def _create_session(self) -> requests.Session:
@@ -135,14 +126,26 @@ class EPGGenerator:
             return False, source, None
 
     def normalize_channel_name(self, name: str) -> str:
-        """标准化频道名称（统一识别NEWTV系列）"""
+        """标准化频道名称（与epg_data.json的logo配置完全匹配）"""
+        # 核心：数据源频道名 → epg_data.json中的epgid
+        name_mapping = {
+            "1905极限反转(国内)": "1905极限反转",
+            "4K修复频道": "4K修复",
+            "河南移动电视": "河南移动电视",
+            "亚洲卫视": "亚洲卫视",
+            # 可继续补充其他需要匹配的频道
+        }
+        # 优先匹配logo配置的名称
+        if name in name_mapping:
+            name = name_mapping[name]
+        # 基础标准化（去特殊字符、统一格式）
         name = re.sub(r'[^\u4e00-\u9fff0-9a-zA-Z]', '', name)
         name = name.replace("new", "NEW").replace("newtv", "NEWTV")
         name = re.sub(r'^IHOT|^IPTV', '', name)
         return name.strip()
 
     def pre_fetch_program_channels(self, sources: List[str]):
-        """预抓取所有节目单的channel，建立名称→数字ID映射"""
+        """预抓取所有节目单的channel，建立名称→ID映射"""
         logging.info("开始预抓取节目单频道映射...")
         for source in sources:
             try:
@@ -157,34 +160,30 @@ class EPGGenerator:
                 content_clean = self.clean_xml_content(content)
                 xml_tree = etree.fromstring(content_clean.encode('utf-8'))
                 
-                # 提取所有节目单的channel（数字ID）和对应频道名称
-                programs = xml_tree.xpath("//programme")
-                channels = xml_tree.xpath("//channel")
-                
                 # 建立频道ID→名称映射
                 channel_id_to_name = {}
-                for ch in channels:
+                for ch in xml_tree.xpath("//channel"):
                     cid = ch.get("id", "").strip()
                     display_names = ch.xpath(".//display-name/text()")
                     ch_name = display_names[0].strip() if display_names else cid
                     channel_id_to_name[cid] = ch_name
                 
                 # 建立名称→数字ID映射
-                for program in programs:
+                for program in xml_tree.xpath("//programme"):
                     prog_cid = program.get("channel", "").strip()
                     if prog_cid.isdigit() and prog_cid in channel_id_to_name:
                         ch_name = channel_id_to_name[prog_cid]
                         normalized_name = self.normalize_channel_name(ch_name)
-                        if normalized_name and normalized_name not in self.program_channel_map:
+                        if normalized_name not in self.program_channel_map:
                             self.program_channel_map[normalized_name] = prog_cid
                             
             except Exception as e:
                 logging.warning(f"预抓取{source}失败: {str(e)}")
         
-        logging.info(f"预抓取完成，建立{len(self.program_channel_map)}个名称→数字ID映射")
+        logging.info(f"预抓取完成，建立{len(self.program_channel_map)}个名称→ID映射")
 
     def process_channels(self, xml_tree, source: str) -> int:
-        """处理频道：自动分配标准数字ID（匹配logo）"""
+        """处理频道：统一名称以匹配logo"""
         channels = xml_tree.xpath("//channel")
         add_count = 0
         
@@ -193,7 +192,7 @@ class EPGGenerator:
             if not original_cid:
                 continue
             
-            # 获取频道名称并标准化
+            # 获取并标准化频道名称（匹配logo）
             display_names = channel.xpath(".//display-name/text()")
             channel_name = display_names[0].strip() if display_names else original_cid
             normalized_name = self.normalize_channel_name(channel_name)
@@ -206,33 +205,26 @@ class EPGGenerator:
             if any(kw in channel_name for kw in DOMESTIC_SPECIAL):
                 pass
             
-            # 核心：优先使用标准数字ID（匹配logo）
+            # 分配最终ID（确保节目单匹配）
             final_cid = original_cid
-            # 1. 先匹配NEWTV系列的预抓取ID
-            if "NEWTV" in normalized_name or "NEW" in normalized_name:
-                if normalized_name in self.program_channel_map:
-                    final_cid = self.program_channel_map[normalized_name]
-                else:
-                    programs = xml_tree.xpath('//programme[contains(@channel, "{}")]'.format(normalized_name[:4]))
-                    if programs:
-                        final_cid = programs[0].get("channel", "").strip()
-            # 2. 再匹配COOL9标准ID
-            if channel_name in COOL9_ID_MAPPING:
-                final_cid = COOL9_ID_MAPPING[channel_name]
+            if normalized_name in self.program_channel_map:
+                final_cid = self.program_channel_map[normalized_name]
             
-            # 处理去重
+            # 去重并保存
             if normalized_name in self.name_to_final_id:
                 final_cid = self.name_to_final_id[normalized_name]
             else:
-                # 确保最终ID是数字
                 if not final_cid.isdigit() and normalized_name in self.program_channel_map:
                     final_cid = self.program_channel_map[normalized_name]
             
             if final_cid in self.channel_ids or not final_cid:
                 continue
             
-            # 更新频道ID并保存映射
+            # 更新频道信息（名称+ID）
             channel.set("id", final_cid)
+            # 统一频道名称为logo配置的名称
+            for dn in channel.xpath(".//display-name"):
+                dn.text = normalized_name
             self.channel_ids.add(final_cid)
             self.name_to_final_id[normalized_name] = final_cid
             self.all_channels.append(channel)
@@ -242,50 +234,37 @@ class EPGGenerator:
         return add_count
 
     def process_programs(self, xml_tree):
-        """处理节目单：仅保留数字ID匹配的节目单 + 时区转换（UTC→东八区）"""
-        import datetime  # 引入datetime处理时区
+        """处理节目单：匹配频道ID"""
+        import datetime
         programs = xml_tree.xpath("//programme")
         for program in programs:
             prog_cid = program.get("channel", "").strip()
-            # 只保留数字ID且存在的节目单
             if not (prog_cid.isdigit() and prog_cid in self.channel_ids):
                 continue
 
-            # 时区转换：将UTC时间转为东八区时间
+            # 时区转换为东八区
             start_str = program.get("start", "")
             stop_str = program.get("stop", "")
-            
             if start_str and stop_str:
                 try:
-                    # 解析UTC时间（截取前14位：YYYYMMDDHHMMSS）
                     start_utc = datetime.datetime.strptime(start_str[:14], "%Y%m%d%H%M%S")
                     stop_utc = datetime.datetime.strptime(stop_str[:14], "%Y%m%d%H%M%S")
-                    
-                    # 增加8小时偏移量，转为东八区时间
                     start_cst = start_utc + datetime.timedelta(hours=8)
                     stop_cst = stop_utc + datetime.timedelta(hours=8)
-                    
-                    # 重新设置时间（带东八区时区标识 +0800）
                     program.set("start", start_cst.strftime("%Y%m%d%H%M%S") + " +0800")
                     program.set("stop", stop_cst.strftime("%Y%m%d%H%M%S") + " +0800")
                 except Exception as e:
-                    logging.warning(f"节目时间转换失败（忽略该节目）: {str(e)}")
-                    continue  # 转换失败则跳过该节目，避免时间异常
+                    logging.warning(f"节目时间转换失败: {str(e)}")
+                    continue
 
             self.all_programs.append(program)
 
     def fetch_all_sources(self, sources: List[str]) -> bool:
         """并发获取所有EPG源并处理"""
-        # 第一步：预抓取节目单channel映射
         self.pre_fetch_program_channels(sources)
-        
         successful_sources = 0
         with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(sources))) as executor:
-            future_to_source = {
-                executor.submit(self.fetch_single_source, source): source 
-                for source in sources
-            }
-            
+            future_to_source = {executor.submit(self.fetch_single_source, source): source for source in sources}
             for future in as_completed(future_to_source):
                 source = future_to_source[future]
                 try:
@@ -294,14 +273,9 @@ class EPGGenerator:
                         self.process_channels(xml_tree, source)
                         self.process_programs(xml_tree)
                         successful_sources += 1
-                        
                 except Exception as e:
                     logging.error(f"处理源数据失败 {source}: {str(e)}")
-        
-        if successful_sources == 0:
-            logging.error("所有EPG源处理失败")
-            return False
-        return True
+        return successful_sources > 0
 
     def generate_final_xml(self) -> str:
         """生成最终EPG XML文件"""
@@ -309,75 +283,54 @@ class EPGGenerator:
 <tv generator-info-name="domestic-epg-generator" 
     generator-info-url="https://github.com/fxq12345/epg" 
     last-update="{time.strftime("%Y%m%d%H%M%S")}">'''
-        
         root = etree.fromstring(f"{xml_declare}</tv>".encode("utf-8"))
-        
         for channel in self.all_channels:
             root.append(channel)
-            
         for program in self.all_programs:
             root.append(program)
-            
         return etree.tostring(root, encoding="utf-8", pretty_print=True).decode("utf-8")
 
     def save_epg_files(self, xml_content: str):
         """保存EPG文件"""
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        
-        # 清理旧文件
         for f in os.listdir(OUTPUT_DIR):
             if f.endswith(('.xml', '.gz', '.log')):
                 try:
                     os.remove(os.path.join(OUTPUT_DIR, f))
                 except Exception as e:
                     logging.warning(f"删除旧文件失败 {f}: {str(e)}")
-        
-        # 保存XML和GZIP
         xml_path = os.path.join(OUTPUT_DIR, "epg.xml")
         with open(xml_path, "w", encoding="utf-8") as f:
             f.write(xml_content)
-        xml_size = os.path.getsize(xml_path)
-        
         gz_path = os.path.join(OUTPUT_DIR, "epg.gz")
         with gzip.open(gz_path, "wb") as f:
             f.write(xml_content.encode("utf-8"))
-        gz_size = os.path.getsize(gz_path)
-        
-        logging.info(f"EPG文件生成完成: XML={xml_size}字节, GZIP={gz_size}字节")
+        logging.info(f"EPG文件生成完成: XML={os.path.getsize(xml_path)}字节, GZIP={os.path.getsize(gz_path)}字节")
 
     def print_statistics(self):
         """打印统计报告"""
-        total_channels = len(self.channel_ids)
-        total_programs = len(self.all_programs)
-        
         logging.info("\n" + "="*50)
         logging.info("📊 EPG生成统计报告")
         logging.info("="*50)
-        logging.info(f"  最终保留频道数: {total_channels}个")
-        logging.info(f"  最终保留节目单数: {total_programs}个")
-        logging.info(f"  自动关联名称→数字ID数: {len(self.name_to_final_id)}个")
+        logging.info(f"  最终保留频道数: {len(self.channel_ids)}个")
+        logging.info(f"  最终保留节目单数: {len(self.all_programs)}个")
+        logging.info(f"  已匹配logo的频道数: {len(self.name_to_final_id)}个")
         logging.info("="*50)
 
     def run(self):
         """主运行方法"""
         start_time = time.time()
         logging.info("=== EPG生成开始 ===")
-        
         try:
             sources = self.read_epg_sources()
             logging.info(f"读取到{len(sources)}个有效EPG源")
-            
             if not self.fetch_all_sources(sources):
                 return False
-                
             xml_content = self.generate_final_xml()
             self.save_epg_files(xml_content)
             self.print_statistics()
-            
-            total_time = time.time() - start_time
-            logging.info(f"=== EPG生成完成! 总耗时: {total_time:.2f}秒 ===")
+            logging.info(f"=== EPG生成完成! 总耗时: {time.time()-start_time:.2f}秒 ===")
             return True
-            
         except Exception as e:
             logging.error(f"EPG生成失败: {str(e)}")
             return False
