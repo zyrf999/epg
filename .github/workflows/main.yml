@@ -1,3 +1,12 @@
+name: Auto Update EPG (极简稳定版)
+on:
+  schedule:
+    - cron: '0 16 * * *'  # 北京时间0点
+    - cron: '0 4 * * *'   # 北京时间12点
+  workflow_dispatch:
+  push:
+    branches: [ master ]
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -6,27 +15,36 @@ jobs:
       contents: write
 
     steps:
-      # ...（其他步骤不变）
-
-      - name: 设置Python（稳定版3.10）
-        uses: actions/setup-python@v5
+      - name: 拉取代码
+        uses: actions/checkout@v4
         with:
-          python-version: '3.10'
-          cache: 'pip'
+          ref: master
+          fetch-depth: 0
 
-      - name: 安装依赖（直接用pip）
+      - name: 安装Python和依赖
         run: |
-          pip install --upgrade pip
-          pip install aiohttp tqdm opencc-python-reimplemented lxml
-
-      # ...（后续步骤不变）
+          # 安装Python 3.10
+          sudo apt-get update
+          sudo apt-get install -y python3.10 python3-pip
+          # 安装所有需要的包
+          pip3 install aiohttp tqdm opencc-python-reimplemented lxml
 
       - name: 运行EPG生成脚本
         run: |
           echo "=== 开始生成EPG ==="
           rm -rf output/* 2>/dev/null || true
-          set -x
-          python merge.py 2>&1 | tee epg_output.log  # 直接用python运行，不用pipenv
-          set +x
-          echo "=== 生成日志 ==="
-          cat epg_output.log || echo "无日志"
+          python3 merge.py
+          echo "=== 生成完成 ==="
+
+      - name: 验证并推送
+        run: |
+          if [ ! -f "output/epg.xml" ]; then
+            echo "❌ 未生成EPG"
+            exit 1
+          fi
+          # 提交推送
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add output/
+          git commit -m "EPG更新 $(date)" || exit 0
+          git push origin master
