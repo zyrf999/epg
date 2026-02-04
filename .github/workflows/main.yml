@@ -1,107 +1,106 @@
-name: 'Auto Update EPG'
-
+name: Auto Update EPG (整合优化版)
 on:
   schedule:
-    - cron: '0 5,17 * * *'  # UTC 5点和17点 = 北京时间13点和1点
-  workflow_dispatch:
+    - cron: '0 5,17 * * *'  # UTC 5/17点 = 北京时间13/1点
+    - cron: '0 0,12 * * *'  # 新增每天0/12点补充更新
+  workflow_dispatch:  # 保留手动触发
   push:
-    branches:
-      - master
+    branches: [ master ]
 
 jobs:
   update:
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    
     permissions:
       contents: write
-    
+
     steps:
-      - name: Checkout code
+      - name: 配置Git网络稳定性（取自旧版）
+        run: |
+          git config --global http.retry 5
+          git config --global http.lowSpeedLimit 1000
+          git config --global http.lowSpeedTime 60
+
+      - name: 拉取代码（明确分支+完整历史）
         uses: actions/checkout@v4
-      
-      - name: Set up Python
+        with:
+          ref: master
+          fetch-depth: 0  # 拉取完整历史，避免冲突
+
+      - name: 设置Python（保留新版3.13+旧版兼容性）
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      
-      - name: Install dependencies
+          cache: 'pip'  # 新增依赖缓存，加速安装
+
+      - name: 安装依赖（整合新旧版）
         run: |
-          pip install pipenv
-          pipenv install --deploy
+          python -m pip install --upgrade pip
+          if [ -f "Pipfile" ]; then
+            pip install pipenv && pipenv install --deploy
+          else
+            pip install -r requirements.txt
+          fi
           echo "依赖安装完成"
-      
-      - name: Debug - List files before generation
+
+      - name: Debug - 前置文件检查（取自新版）
         run: |
-          echo "=== 生成前的文件结构 ==="
+          echo "=== 生成前文件结构 ==="
           find . -type f -name "*.py" | head -20
-          echo "=== Pipfile内容 ==="
-          cat Pipfile || echo "没有Pipfile"
-      
-      - name: Generate EPG with detailed logging
+          echo "=== 配置文件内容 ==="
+          cat config.txt || echo "无config.txt"
+
+      - name: 运行EPG生成脚本（整合新旧版）
         run: |
           echo "=== 开始生成EPG ==="
-          # 删除旧的输出文件
           rm -f output/epg.xml output/epg.gz 2>/dev/null || true
-          
-          # 运行EPG生成并捕获输出
-          echo "运行命令: pipenv run epg"
-          set -x  # 开启详细输出
-          pipenv run epg 2>&1 | tee epg_output.log
+          set -x
+          python merge.py 2>&1 | tee epg_output.log  # 用merge.py（旧版）+ 日志（新版）
           set +x
-          
-          echo "=== EPG生成输出 ==="
-          cat epg_output.log || echo "无输出日志"
-      
-      - name: Verify EPG content
+          echo "=== 生成日志 ==="
+          cat epg_output.log || echo "无日志"
+
+      - name: 验证EPG内容（增强版，整合新旧版）
         run: |
-          echo "=== 验证EPG文件 ==="
-          echo "输出目录内容："
+          echo "=== 验证文件 ==="
           ls -la output/ 2>/dev/null || echo "output目录不存在"
           
+          # 新版详细验证 + 旧版大小检查
           if [[ -f "output/epg.xml" ]]; then
-            echo "EPG文件大小: $(du -h output/epg.xml)"
+            echo "XML大小: $(du -h output/epg.xml)"
             echo "行数: $(wc -l < output/epg.xml)"
-            
-            echo "=== 频道数量 ==="
             channels=$(grep -c '<channel ' output/epg.xml)
-            echo "$channels"
-            
-            echo "=== 节目数量 ==="
             programmes=$(grep -c '<programme ' output/epg.xml)
-            echo "$programmes"
+            echo "频道数: $channels | 节目数: $programmes"
             
-            if [[ $programmes -eq 0 ]]; then
-              echo "⚠️ 警告：没有节目数据！"
-              echo "可能的问题："
-              echo "1. 数据源API失效"
-              echo "2. 网络请求失败"
-              echo "3. 解析程序错误"
-              echo "=== 文件前50行 ==="
+            if [[ $programmes -eq 0 || $(stat -c%s "output/epg.xml") -lt 100 ]]; then
+              echo "⚠️ EPG无效"
               head -50 output/epg.xml
-            else
-              echo "✓ 生成成功：$channels 个频道，$programmes 个节目"
+              exit 1
             fi
             
-            # 创建压缩文件
             gzip -c output/epg.xml > output/epg.gz
-            echo "压缩文件大小: $(du -h output/epg.gz)"
+            if [[ $(stat -c%s "output/epg.gz") -lt 50 ]]; then
+              echo "⚠️ 压缩文件无效"
+              exit 1
+            fi
+            echo "✓ 生成成功"
           else
-            echo "❌ 错误：未生成epg.xml"
-            find . -name "*.xml" -type f
+            echo "❌ 未生成epg.xml"
+            exit 1
           fi
-      
-      - name: Commit and push changes
+
+      - name: 提交并推送（解决冲突版）
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           
-          # 添加所有输出文件
+          git pull origin master --rebase || echo "拉取冲突，强制覆盖"
           git add output/
           
           if git diff --staged --quiet; then
-            echo "没有文件需要更新"
+            echo "无更新"
           else
             git commit -m "📺 EPG自动更新 - $(date +'%Y-%m-%d %H:%M:%S')"
-            git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
+            git push origin master --force  # 保留旧版强制推送，避免冲突
           fi
