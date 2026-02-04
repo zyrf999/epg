@@ -29,7 +29,7 @@ logging.basicConfig(
     ]
 )
 
-# 国外频道过滤关键词（和昨天一致）
+# 国外频道过滤关键词
 FOREIGN_KEYWORDS = [
     "BBC", "CNN", "NBC", "FOX", "HBO", "Netflix", "Disney",
     "欧美", "美国", "英国", "法国", "德国", "日本", "韩国",
@@ -37,7 +37,7 @@ FOREIGN_KEYWORDS = [
     "欧洲", "美洲", "非洲", "俄罗斯", "印度", "巴西"
 ]
 
-# 国内特殊频道保护（和昨天一致）
+# 国内特殊频道保护
 DOMESTIC_SPECIAL = ["popc", "爱", "淘", "new", "NEW", "POPC", "超级电影", "IPTV", "new系列", "NewTV"]
 # ==================================================
 
@@ -51,7 +51,6 @@ class EPGGenerator:
         self.program_channel_map = dict()
 
     def _create_session(self) -> requests.Session:
-        # 和昨天一致，未修改
         session = requests.Session()
         retry_strategy = Retry(
             total=CORE_RETRY_COUNT + 2,
@@ -69,7 +68,6 @@ class EPGGenerator:
         return session
 
     def read_epg_sources(self) -> List[str]:
-        # 和昨天一致，未修改
         if not os.path.exists(CONFIG_FILE):
             logging.error(f"配置文件不存在: {CONFIG_FILE}")
             raise FileNotFoundError(f"找不到配置文件: {CONFIG_FILE}")
@@ -95,13 +93,14 @@ class EPGGenerator:
             raise
 
     def clean_xml_content(self, content: str) -> str:
-        # 和昨天一致，未修改
-        content_clean = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', content)
+        """增强字符清理：过滤所有非安全字符"""
+        # 只保留可打印字符+中文，彻底避免非法字符
+        content_clean = re.sub(r'[^\x20-\x7E\u4E00-\u9FFF]', '', content)
         content_clean = content_clean.replace('& ', '&amp; ')
         return content_clean
 
     def fetch_single_source(self, source: str) -> Tuple[bool, str, any]:
-        # 和昨天一致，未修改
+        """新增：自动跳过XML解析失败的源"""
         try:
             start_time = time.time()
             logging.info(f"开始抓取: {source}")
@@ -120,19 +119,21 @@ class EPGGenerator:
             cost_time = time.time() - start_time
             logging.info(f"成功抓取: {source} | 耗时: {cost_time:.2f}s")
             return True, source, xml_tree
-            
+        
+        # 捕获XML解析错误，直接跳过该源
+        except etree.XMLSyntaxError as e:
+            logging.error(f"XML解析失败（自动跳过） {source}: {str(e)}")
+            return False, source, None
         except Exception as e:
             logging.error(f"抓取失败 {source}: {str(e)}")
             return False, source, None
 
     def normalize_channel_name(self, name: str) -> str:
-        """只做1件事：去掉特殊字符，保留原始名称（适配logo模糊匹配）"""
-        # 只去括号、空格、符号，不删任何文字/数字，和昨天的名称逻辑一致
+        """只去特殊字符，保留原始名称"""
         name = re.sub(r'[\(（）\)【】\[\]、，。！？-_\s]', '', name)
         return name.strip()
 
     def pre_fetch_program_channels(self, sources: List[str]):
-        # 和昨天一致，未修改
         logging.info("开始预抓取节目单频道映射...")
         for source in sources:
             try:
@@ -168,7 +169,6 @@ class EPGGenerator:
         logging.info(f"预抓取完成，建立{len(self.program_channel_map)}个名称→ID映射")
 
     def process_channels(self, xml_tree, source: str) -> int:
-        # 和昨天一致，未修改（保证节目单关联逻辑不变）
         channels = xml_tree.xpath("//channel")
         add_count = 0
         
@@ -183,18 +183,15 @@ class EPGGenerator:
             if not normalized_name:
                 continue
             
-            # 过滤国外频道
             if any(kw in channel_name for kw in FOREIGN_KEYWORDS):
                 continue
             if any(kw in channel_name for kw in DOMESTIC_SPECIAL):
                 pass
             
-            # 分配ID（和昨天逻辑一致）
             final_cid = original_cid
             if normalized_name in self.program_channel_map:
                 final_cid = self.program_channel_map[normalized_name]
             
-            # 去重
             if normalized_name in self.name_to_final_id:
                 final_cid = self.name_to_final_id[normalized_name]
             else:
@@ -204,7 +201,6 @@ class EPGGenerator:
             if final_cid in self.channel_ids or not final_cid:
                 continue
             
-            # 更新频道信息（只改名称为去特殊字符后的版本，ID不变）
             channel.set("id", final_cid)
             for dn in channel.xpath(".//display-name"):
                 dn.text = normalized_name
@@ -217,7 +213,6 @@ class EPGGenerator:
         return add_count
 
     def process_programs(self, xml_tree):
-        # 和昨天一致，未修改（节目单处理逻辑不变）
         import datetime
         programs = xml_tree.xpath("//programme")
         for program in programs:
@@ -225,7 +220,6 @@ class EPGGenerator:
             if not (prog_cid.isdigit() and prog_cid in self.channel_ids):
                 continue
 
-            # 时区转换
             start_str = program.get("start", "")
             stop_str = program.get("stop", "")
             if start_str and stop_str:
@@ -243,7 +237,6 @@ class EPGGenerator:
             self.all_programs.append(program)
 
     def fetch_all_sources(self, sources: List[str]) -> bool:
-        # 和昨天一致，未修改
         self.pre_fetch_program_channels(sources)
         successful_sources = 0
         with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(sources))) as executor:
@@ -261,7 +254,6 @@ class EPGGenerator:
         return successful_sources > 0
 
     def generate_final_xml(self) -> str:
-        # 和昨天一致，未修改
         xml_declare = f'''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="domestic-epg-generator" 
     generator-info-url="https://github.com/fxq12345/epg" 
@@ -274,7 +266,6 @@ class EPGGenerator:
         return etree.tostring(root, encoding="utf-8", pretty_print=True).decode("utf-8")
 
     def save_epg_files(self, xml_content: str):
-        # 和昨天一致，未修改
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         for f in os.listdir(OUTPUT_DIR):
             if f.endswith(('.xml', '.gz', '.log')):
@@ -291,7 +282,6 @@ class EPGGenerator:
         logging.info(f"EPG文件生成完成: XML={os.path.getsize(xml_path)}字节, GZIP={os.path.getsize(gz_path)}字节")
 
     def print_statistics(self):
-        # 和昨天一致，未修改
         logging.info("\n" + "="*50)
         logging.info("📊 EPG生成统计报告")
         logging.info("="*50)
@@ -301,7 +291,6 @@ class EPGGenerator:
         logging.info("="*50)
 
     def run(self):
-        # 和昨天一致，未修改
         start_time = time.time()
         logging.info("=== EPG生成开始 ===")
         try:
