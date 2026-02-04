@@ -29,13 +29,13 @@ logging.basicConfig(
     ]
 )
 
-# 仅保留必要的手动映射（不确定的可以全部删除，留空{}）
+# 频道名→标准数字ID映射（与播放器logo匹配）
 COOL9_ID_MAPPING = {
-    "89": "山东卫视", "221": "山东教育", "381": "山东新闻", 
-    "382": "山东农科", "383": "山东齐鲁", "384": "山东文旅",
-    "1": "CCTV1", "2": "CCTV2", "3": "CCTV3", "4": "CCTV4", 
-    "5": "CCTV5", "6": "CCTV6", "7": "CCTV7", "8": "CCTV8",
-    "9": "CCTV9", "10": "CCTV10"
+    "山东卫视": "89", "山东教育": "221", "山东新闻": "381", 
+    "山东农科": "382", "山东齐鲁": "383", "山东文旅": "384",
+    "CCTV1": "1", "CCTV2": "2", "CCTV3": "3", "CCTV4": "4", 
+    "CCTV5": "5", "CCTV6": "6", "CCTV7": "7", "CCTV8": "8",
+    "CCTV9": "9", "CCTV10": "10"
 }
 
 # 国外频道关键词黑名单（命中则过滤）
@@ -184,7 +184,7 @@ class EPGGenerator:
         logging.info(f"预抓取完成，建立{len(self.program_channel_map)}个名称→数字ID映射")
 
     def process_channels(self, xml_tree, source: str) -> int:
-        """处理频道：自动给NEWTV系列分配数字ID"""
+        """处理频道：自动分配标准数字ID（匹配logo）"""
         channels = xml_tree.xpath("//channel")
         add_count = 0
         
@@ -206,28 +206,25 @@ class EPGGenerator:
             if any(kw in channel_name for kw in DOMESTIC_SPECIAL):
                 pass
             
-            # 核心：给NEWTV系列分配数字ID（优先预抓取的映射）
+            # 核心：优先使用标准数字ID（匹配logo）
             final_cid = original_cid
+            # 1. 先匹配NEWTV系列的预抓取ID
             if "NEWTV" in normalized_name or "NEW" in normalized_name:
-                # 从预抓取的映射中获取数字ID
                 if normalized_name in self.program_channel_map:
                     final_cid = self.program_channel_map[normalized_name]
-                # 若预抓取失败，尝试从当前源节目单提取
                 else:
                     programs = xml_tree.xpath('//programme[contains(@channel, "{}")]'.format(normalized_name[:4]))
                     if programs:
                         final_cid = programs[0].get("channel", "").strip()
+            # 2. 再匹配COOL9标准ID
+            if channel_name in COOL9_ID_MAPPING:
+                final_cid = COOL9_ID_MAPPING[channel_name]
             
-            # 处理手动映射和去重
+            # 处理去重
             if normalized_name in self.name_to_final_id:
                 final_cid = self.name_to_final_id[normalized_name]
             else:
-                if original_cid in COOL9_ID_MAPPING:
-                    final_cid = COOL9_ID_MAPPING[original_cid]
-                elif channel_name in COOL9_ID_MAPPING:
-                    final_cid = COOL9_ID_MAPPING[channel_name]
-                
-                # 确保最终ID是数字（和iHOT保持一致）
+                # 确保最终ID是数字
                 if not final_cid.isdigit() and normalized_name in self.program_channel_map:
                     final_cid = self.program_channel_map[normalized_name]
             
