@@ -1,8 +1,8 @@
 name: Auto Update EPG (最终稳定版)
 on:
   schedule:
-    - cron: '0 5,17 * * *'  # UTC 5/17点 = 北京时间13/1点
-    - cron: '0 0,12 * * *'  # 每天0/12点补充更新
+    - cron: '0 16 * * *'  # UTC 16点 = 北京时间0点
+    - cron: '0 4 * * *'   # UTC 4点 = 北京时间12点
   workflow_dispatch:  # 手动触发
   push:
     branches: [ master ]
@@ -26,27 +26,28 @@ jobs:
         with:
           ref: master
           fetch-depth: 0
-          # 同步上游仓库（解决分支落后问题）
           repository: zyrf999/epg
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 同步上游仓库
         run: |
-          git remote add upstream https://github.com/mytv-android/myEPG.git
+          git remote add upstream https://github.com/mytv-android/myEPG.git || true
           git fetch upstream
           git merge upstream/master --allow-unrelated-histories || echo "上游无新提交"
 
-      - name: 设置Python（利用Pipfile缓存）
+      - name: 设置Python（稳定版3.10）
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
-          cache: 'pipenv'  # 匹配仓库中的Pipfile
+          python-version: '3.10'
+          cache: 'pipenv'
 
-      - name: 安装依赖（使用Pipfile）
+      - name: 安装依赖（包含lxml）
         run: |
           pip install --upgrade pip
           pip install pipenv
-          pipenv install --deploy  # 严格按照Pipfile.lock安装
+          # 在Pipfile中添加lxml依赖
+          echo -e "[packages]\nlxml = \"*\"\naiohttp = \"*\"\ntqdm = \"*\"\nopencc-python-reimplemented = \"*\"" > Pipfile
+          pipenv install --deploy
 
       - name: Debug - 仓库文件检查
         run: |
@@ -78,18 +79,16 @@ jobs:
             echo "❌ 未生成epg.xml"
             exit 1
           fi
-          if [ $(stat -c%s "output/epg.xml") -lt 100 ]; then
+          if [ $(stat -c%s "output/epg.xml") -lt 1000 ]; then
             echo "❌ epg.xml内容过短"
             head -50 output/epg.xml
             exit 1
           fi
-          # 生成压缩包
           gzip -c output/epg.xml > output/epg.gz
-          if [ $(stat -c%s "output/epg.gz") -lt 50 ]; then
+          if [ $(stat -c%s "output/epg.gz") -lt 500 ]; then
             echo "❌ epg.gz压缩失败"
             exit 1
           fi
-          # 统计信息
           channels=$(grep -c '<channel ' output/epg.xml)
           programmes=$(grep -c '<programme ' output/epg.xml)
           echo "✓ 生成成功：${channels}个频道，${programmes}个节目"
@@ -100,11 +99,11 @@ jobs:
           git config --local user.name "github-actions[bot]"
           
           git add output/
-          git add merge.py  # 若脚本有更新也提交
+          git add merge.py Pipfile  # 提交脚本和依赖配置
           
           if git diff --staged --quiet; then
             echo "无内容更新，跳过提交"
           else
             git commit -m "📺 EPG自动更新 - $(date +'%Y-%m-%d %H:%M:%S')"
-            git push origin master --force-with-lease  # 安全强制推送
+            git push origin master --force-with-lease
           fi
