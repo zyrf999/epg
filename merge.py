@@ -14,6 +14,39 @@ from tqdm import tqdm  # 引入 tqdm 的同步支持
 
 TZ_UTC_PLUS_8 = timezone(timedelta(hours=8))
 
+# 纯国外频道关键字列表（严格屏蔽，保留所有中国地区频道包括港澳台）
+FOREIGN_KEYWORDS = [
+    # 欧美国家
+    'CNN', 'BBC', 'FOX', 'HBO', 'ESPN', 'NBC', 'ABC', 'CBS', 'MTV', 'VH1',
+    'DISNEY', 'NICK', 'CARTOON', 'DISCOVERY', 'NATIONAL GEOGRAPHIC',
+    'HISTORY', 'TLC', 'AMC', 'SHOWTIME', 'STARZ', 'TNT', 'USA NETWORK',
+    # 日本
+    'NHK', '日本テレビ', '日本電視', '日テレ', 'テレビ朝日', 'TBSテレビ',
+    'テレビ東京', 'フジテレビ', 'WOWOW', 'アニマックス',
+    # 韩国
+    'KBS', 'MBC', 'SBS', 'JTBC', 'TV조선', '채널A', 'MBN',
+    # 其他国家
+    'AXN', 'ANIMAL PLANET', 'CARTOON NETWORK', 'COMEDY CENTRAL',
+    # 俄罗斯
+    'ПЕРВЫЙ КАНАЛ', 'РОССИЯ', 'НТВ', 'ТНТ',
+    # 印度
+    'STAR PLUS', 'SONY TV', 'ZEE TV'
+]
+
+
+def is_foreign_channel(channel_name):
+    """检查频道是否是纯国外频道（保留所有中国地区频道包括港澳台）"""
+    if not channel_name:
+        return False
+    
+    # 直接检查是否是国外频道
+    channel_name_upper = channel_name.upper()
+    for keyword in FOREIGN_KEYWORDS:
+        if keyword.upper() in channel_name_upper:
+            print(f"屏蔽国外频道: {channel_name} (匹配关键字: {keyword})")
+            return True
+    return False
+
 
 def transform2_zh_hans(string):
     cc = OpenCC("t2s")
@@ -167,8 +200,22 @@ async def main():
         print("Finished.")
         with tqdm(total=len(channels), desc="Merging EPG", unit="file") as pbar:
             for channel_id, display_names in channels.items():
-                if len(programmes[channel_id]) == 0:
+                # 检查是否为国外频道
+                is_foreign = False
+                for display_name_node in display_names:
+                    display_name = display_name_node[0]
+                    if is_foreign_channel(display_name):
+                        is_foreign = True
+                        break
+                
+                if is_foreign:
+                    pbar.update(1)
                     continue
+                
+                if len(programmes[channel_id]) == 0:
+                    pbar.update(1)
+                    continue
+                    
                 is_in_map = channel_id in all_channels_map
                 map_id = channel_id
                 for display_name_node in display_names:
@@ -181,7 +228,7 @@ async def main():
                 if not is_in_map:
                     all_channel_id.add(channel_id)
                     all_channel_names[channel_id] = display_names
-                    all_programmes[display_name] = programmes[channel_id]
+                    all_programmes[channel_id] = programmes[channel_id]
                     all_channels_map[channel_id] = channel_id
                     for display_name_node in display_names:
                         display_name = display_name_node[0]
