@@ -26,8 +26,8 @@ jobs:
           # 安装Python 3.10
           sudo apt-get update
           sudo apt-get install -y python3.10 python3-pip
-          # 安装所有需要的包
-          pip3 install aiohttp tqdm opencc-python-reimplemented lxml
+          # 安装依赖（已包含opencc-python-reimplemented）
+          pip3 install --upgrade aiohttp tqdm opencc-python-reimplemented lxml
 
       - name: 运行EPG生成脚本
         run: |
