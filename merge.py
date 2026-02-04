@@ -29,95 +29,36 @@ logging.basicConfig(
     ]
 )
 
-# 核心频道配置（山东本地→央视→其他卫视优先级）
-CHANNEL_PRIORITY = [
-    ("山东本地", ["山东"]),
-    ("央视", ["CCTV"]),
-    ("其他卫视", ["卫视", "浙江", "湖南", "江苏", "东方", "北京", "安徽", "广东", "河南", "深圳"])
-]
-
-# 酷9专用ID映射表（数字ID→名称ID，含完整4K频道）
+# 仅保留必要的手动映射（不确定的可以全部删除，留空{}）
 COOL9_ID_MAPPING = {
-    # 山东本地频道
     "89": "山东卫视", "221": "山东教育", "381": "山东新闻", 
     "382": "山东农科", "383": "山东齐鲁", "384": "山东文旅",
-    # 央视常规频道
     "1": "CCTV1", "2": "CCTV2", "3": "CCTV3", "4": "CCTV4", 
     "5": "CCTV5", "6": "CCTV6", "7": "CCTV7", "8": "CCTV8",
-    "9": "CCTV9", "10": "CCTV10",
-    # 4K超高清频道（完整补充）
-    "101": "CCTV4K", "102": "浙江卫视4K", "103": "湖南卫视4K",
-    "104": "东方卫视4K", "105": "北京卫视4K", "106": "广东卫视4K",
-    "107": "深圳卫视4K", "108": "山东卫视4K"
+    "9": "CCTV9", "10": "CCTV10"
 }
 
-# ===================== 频道过滤配置 =====================
-# 国内频道关键词（完整覆盖，包含港澳台）
-DOMESTIC_KEYWORDS = [
-    # 中央频道
-    "CCTV", "央视", "中国", "中央",
-    
-    # 省级卫视
-    "卫视", "山东", "浙江", "湖南", "江苏", "东方", "北京", "安徽", "广东", 
-    "河南", "深圳", "四川", "重庆", "天津", "湖北", "江西", "河北", "山西", 
-    "陕西", "甘肃", "青海", "宁夏", "新疆", "内蒙古", "辽宁", "吉林", "黑龙江",
-    "上海", "福建", "广西", "海南", "贵州", "云南", "西藏", 
-    
-    # 港澳台地区
-    "香港", "澳门", "台湾", "翡翠", "凤凰", "亚视", "明珠", "本港", "国际",
-    "中天", "东森", "TVBS", "三立", "民视", "华视", "台视", "公视",
-    
-    # 地方频道常见关键词
-    "新闻", "综合", "都市", "生活", "影视", "体育", "少儿", "教育", "公共",
-    "经济", "法制", "农业", "文旅", "交通", "购物", "戏剧", "音乐",
-    
-    # 数字频道
-    "高清", "4K", "HD", "标清", "SD"
-]
-
-# 国外频道关键词（明确屏蔽）
+# 国外频道关键词黑名单（命中则过滤）
 FOREIGN_KEYWORDS = [
-    # 欧美国家
-    "BBC", "CNN", "FOX", "HBO", "Discovery", "National Geographic", "ESPN",
-    "MTV", "VH1", "Disney", "Cartoon Network", "Nickelodeon",
-    "ABC", "NBC", "CBS", "PBS", "Sky", "ITV", "France", "Deutsche",
-    "RTL", "TF1", "RAI", "NHK", "KBS", "MBC", "SBS", "Arirang",
-    
-    # 其他外语关键词
-    "English", "Sports", "Movie", "News", "Entertainment", "Music",
-    "Kids", "Family", "Documentary", "Lifestyle", "Travel", "Food",
-    "Fashion", "Business", "Finance", "Religion", "God", "Church",
-    
-    # 国家/地区名称
-    "USA", "UK", "Britain", "British", "American", "Canada", "Canadian",
-    "Australia", "Australian", "New Zealand", "Germany", "German",
-    "France", "French", "Italy", "Italian", "Spain", "Spanish",
-    "Japan", "Japanese", "Korea", "Korean", "Russia", "Russian",
-    "India", "Indian", "Thailand", "Thai", "Vietnam", "Vietnamese",
-    
-    # 卫星电视标识
-    "Satellite", "Sat", "DTH", "DBS", "Asia", "Pacific", "World",
-    "International", "Global", "Euro", "European"
+    "BBC", "CNN", "NBC", "FOX", "HBO", "Netflix", "Disney",
+    "欧美", "美国", "英国", "法国", "德国", "日本", "韩国",
+    "泰国", "越南", "印尼", "马来西亚", "新加坡", "澳洲",
+    "欧洲", "美洲", "非洲", "俄罗斯", "印度", "巴西"
 ]
 
-# 特殊处理频道（强制保留的特定频道，即使包含国外关键词）
-WHITELIST_CHANNELS = [
-    "CCTV-4", "CCTV-9", "CCTV News",  # 央视国际频道
-    "凤凰卫视", "凤凰中文", "凤凰资讯", "凤凰香港",  # 凤凰卫视系列
-    "翡翠台", "明珠台", "本港台", "国际台",  # 香港本地频道
-]
-
+# 国内特殊频道关键词（兜底，防止误过滤）
+DOMESTIC_SPECIAL = ["popc", "爱", "淘", "new", "NEW", "POPC", "超级电影", "IPTV", "new系列", "NewTV"]
 # ==================================================
 
 class EPGGenerator:
     def __init__(self):
         self.session = self._create_session()
-        self.channel_ids: Set[str] = set()
-        self.priority_channels = {cat[0]: [] for cat in CHANNEL_PRIORITY}
-        self.other_channels: List = []
-        self.all_programs: List = []
-        self.filtered_foreign_count = 0
-        
+        self.channel_ids: Set[str] = set()  # 去重频道ID
+        self.all_channels: List = []        # 所有保留的频道
+        self.all_programs: List = []        # 所有保留的节目单
+        self.name_to_final_id = dict()      # 频道名称→最终数字ID 映射
+        self.program_channel_map = dict()   # 临时存储节目单channel映射
+
     def _create_session(self) -> requests.Session:
         """创建带重试机制的会话"""
         session = requests.Session()
@@ -153,20 +94,18 @@ class EPGGenerator:
                         else:
                             logging.warning(f"第{line_num}行格式错误，已跳过: {line}")
                 
-                if len(sources) < 3:
-                    logging.warning(f"仅找到{len(sources)}个有效EPG源，建议至少配置3个")
+                if len(sources) < 1:
+                    logging.error(f"未找到有效EPG源，程序退出")
+                    raise ValueError("无有效EPG源")
                 
-                return sources[:8]  # 限制最大源数量，避免过度抓取
-                
+                return sources[:8]
         except Exception as e:
             logging.error(f"读取配置文件失败: {str(e)}")
             raise
 
     def clean_xml_content(self, content: str) -> str:
-        """清理XML内容中的无效字符，避免解析报错"""
-        # 移除控制字符和非XML标准字符
+        """清理XML内容中的无效字符"""
         content_clean = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', content)
-        # 修复常见的XML转义问题
         content_clean = content_clean.replace('& ', '&amp; ')
         return content_clean
 
@@ -179,13 +118,11 @@ class EPGGenerator:
             response = self.session.get(source, timeout=TIMEOUT)
             response.raise_for_status()
             
-            # 处理gzip压缩
             if source.endswith('.gz'):
                 content = gzip.decompress(response.content).decode('utf-8')
             else:
                 content = response.text
                 
-            # 清理XML内容，避免解析失败
             content_clean = self.clean_xml_content(content)
             xml_tree = etree.fromstring(content_clean.encode('utf-8'))
             
@@ -197,121 +134,135 @@ class EPGGenerator:
             logging.error(f"抓取失败 {source}: {str(e)}")
             return False, source, None
 
-    def should_keep_channel(self, channel_name: str) -> Tuple[bool, str]:
-        """判断是否应该保留该频道，返回(是否保留, 原因)"""
-        channel_name_lower = channel_name.lower()
-        
-        # 1. 首先检查白名单（强制保留）
-        for white_channel in WHITELIST_CHANNELS:
-            if white_channel in channel_name:
-                return True, f"白名单频道: {white_channel}"
-        
-        # 2. 检查是否包含国内关键词
-        has_domestic_keyword = any(kw in channel_name for kw in DOMESTIC_KEYWORDS)
-        
-        # 3. 检查是否包含国外关键词
-        has_foreign_keyword = any(
-            fk.lower() in channel_name_lower for fk in FOREIGN_KEYWORDS
-        )
-        
-        # 4. 判断逻辑：
-        #    - 如果包含国内关键词，保留
-        #    - 如果不含国内关键词但含国外关键词，过滤
-        #    - 如果都不含，可能是地方频道，根据其他规则判断
-        
-        if has_domestic_keyword:
-            if has_foreign_keyword:
-                # 同时包含国内外关键词，以国内为主（可能是"BBC中文"之类的）
-                domestic_kws = [kw for kw in DOMESTIC_KEYWORDS if kw in channel_name]
-                return True, f"包含国内关键词: {domestic_kws}"
-            else:
-                # 只含国内关键词，肯定保留
-                domestic_kws = [kw for kw in DOMESTIC_KEYWORDS if kw in channel_name]
-                return True, f"包含国内关键词: {domestic_kws}"
-        else:
-            if has_foreign_keyword:
-                # 只含国外关键词，过滤
-                foreign_kws = [fk for fk in FOREIGN_KEYWORDS if fk.lower() in channel_name_lower]
-                return False, f"包含国外关键词: {foreign_kws}"
-            else:
-                # 都不包含，可能是数字频道或地方台，根据额外规则判断
-                # 规则：中文频道保留，纯英文/数字频道过滤
-                chinese_chars = sum(1 for c in channel_name if '\u4e00' <= c <= '\u9fff')
-                if chinese_chars >= 2:  # 至少2个中文字符
-                    return True, "中文频道"
-                else:
-                    return False, "非中文频道"
+    def normalize_channel_name(self, name: str) -> str:
+        """标准化频道名称（统一识别NEWTV系列）"""
+        name = re.sub(r'[^\u4e00-\u9fff0-9a-zA-Z]', '', name)
+        name = name.replace("new", "NEW").replace("newtv", "NEWTV")
+        name = re.sub(r'^IHOT|^IPTV', '', name)
+        return name.strip()
 
-    def process_channels(self, xml_tree, source: str) -> Tuple[int, int]:
-        """处理频道数据，含分类、过滤、统计"""
+    def pre_fetch_program_channels(self, sources: List[str]):
+        """预抓取所有节目单的channel，建立名称→数字ID映射"""
+        logging.info("开始预抓取节目单频道映射...")
+        for source in sources:
+            try:
+                response = self.session.get(source, timeout=TIMEOUT)
+                response.raise_for_status()
+                
+                if source.endswith('.gz'):
+                    content = gzip.decompress(response.content).decode('utf-8')
+                else:
+                    content = response.text
+                    
+                content_clean = self.clean_xml_content(content)
+                xml_tree = etree.fromstring(content_clean.encode('utf-8'))
+                
+                # 提取所有节目单的channel（数字ID）和对应频道名称
+                programs = xml_tree.xpath("//programme")
+                channels = xml_tree.xpath("//channel")
+                
+                # 建立频道ID→名称映射
+                channel_id_to_name = {}
+                for ch in channels:
+                    cid = ch.get("id", "").strip()
+                    display_names = ch.xpath(".//display-name/text()")
+                    ch_name = display_names[0].strip() if display_names else cid
+                    channel_id_to_name[cid] = ch_name
+                
+                # 建立名称→数字ID映射
+                for program in programs:
+                    prog_cid = program.get("channel", "").strip()
+                    if prog_cid.isdigit() and prog_cid in channel_id_to_name:
+                        ch_name = channel_id_to_name[prog_cid]
+                        normalized_name = self.normalize_channel_name(ch_name)
+                        if normalized_name and normalized_name not in self.program_channel_map:
+                            self.program_channel_map[normalized_name] = prog_cid
+                            
+            except Exception as e:
+                logging.warning(f"预抓取{source}失败: {str(e)}")
+        
+        logging.info(f"预抓取完成，建立{len(self.program_channel_map)}个名称→数字ID映射")
+
+    def process_channels(self, xml_tree, source: str) -> int:
+        """处理频道：自动给NEWTV系列分配数字ID"""
         channels = xml_tree.xpath("//channel")
-        shandong_count = 0
-        filtered_count = 0
+        add_count = 0
         
         for channel in channels:
-            cid = channel.get("id", "").strip()
-            if not cid:
+            original_cid = channel.get("id", "").strip()
+            if not original_cid:
                 continue
-                
-            # 应用酷9ID映射（数字ID→名称ID）
-            if cid in COOL9_ID_MAPPING:
-                cid = COOL9_ID_MAPPING[cid]
-                
-            if cid in self.channel_ids:
-                continue  # 跳过重复频道
-                
-            # 获取频道名称
+            
+            # 获取频道名称并标准化
             display_names = channel.xpath(".//display-name/text()")
-            channel_name = display_names[0].strip() if display_names else ""
-            
-            if not channel_name:
-                continue  # 跳过无名频道
-                
-            # 判断是否应该保留该频道
-            keep_channel, reason = self.should_keep_channel(channel_name)
-            
-            if not keep_channel:
-                filtered_count += 1
-                self.filtered_foreign_count += 1
-                logging.debug(f"过滤国外频道: {channel_name} | 原因: {reason}")
+            channel_name = display_names[0].strip() if display_names else original_cid
+            normalized_name = self.normalize_channel_name(channel_name)
+            if not normalized_name:
                 continue
-                
-            # 更新频道ID（统一格式）
-            channel.set("id", cid)
-            self.channel_ids.add(cid)
             
-            # 按优先级分类
-            channel_added = False
-            for cat_name, keywords in CHANNEL_PRIORITY:
-                if any(kw in channel_name for kw in keywords):
-                    self.priority_channels[cat_name].append(channel)
-                    channel_added = True
-                    if "山东" in channel_name:
-                        shandong_count += 1  # 统计山东本地频道
-                    break
-                    
-            if not channel_added:
-                self.other_channels.append(channel)
+            # 过滤国外频道
+            if any(kw in channel_name for kw in FOREIGN_KEYWORDS):
+                continue
+            if any(kw in channel_name for kw in DOMESTIC_SPECIAL):
+                pass
+            
+            # 核心修改点1：对所有频道都尝试从预抓取映射中获取数字ID
+            final_cid = original_cid
+            
+            # 首先尝试从预抓取映射中查找
+            if normalized_name in self.program_channel_map:
+                final_cid = self.program_channel_map[normalized_name]
+                logging.debug(f"从预抓取映射中找到匹配: '{normalized_name}' -> {final_cid}")
+            
+            # 如果没找到，并且是NEWTV系列，再尝试其他方法
+            elif "NEWTV" in normalized_name or "NEW" in normalized_name:
+                # 若预抓取失败，尝试从当前源节目单提取
+                programs = xml_tree.xpath('//programme[contains(@channel, "{}")]'.format(normalized_name[:4]))
+                if programs:
+                    final_cid = programs[0].get("channel", "").strip()
+            
+            # 处理手动映射和去重
+            if normalized_name in self.name_to_final_id:
+                final_cid = self.name_to_final_id[normalized_name]
+            else:
+                if original_cid in COOL9_ID_MAPPING:
+                    final_cid = COOL9_ID_MAPPING[original_cid]
+                elif channel_name in COOL9_ID_MAPPING:
+                    final_cid = COOL9_ID_MAPPING[channel_name]
                 
-        return shandong_count, filtered_count
+                # 核心修改点2：确保最终ID是数字
+                # 如果不是数字，尝试从预抓取映射中查找
+                if not final_cid.isdigit() and normalized_name in self.program_channel_map:
+                    final_cid = self.program_channel_map[normalized_name]
+            
+            if final_cid in self.channel_ids or not final_cid:
+                continue
+            
+            # 更新频道ID并保存映射
+            channel.set("id", final_cid)
+            self.channel_ids.add(final_cid)
+            self.name_to_final_id[normalized_name] = final_cid
+            self.all_channels.append(channel)
+            add_count += 1
+                
+        logging.info(f"从{source}处理到{add_count}个新频道")
+        return add_count
 
     def process_programs(self, xml_tree):
-        """处理节目单数据，映射酷9频道ID，同时过滤国外频道节目"""
+        """处理节目单：仅保留数字ID匹配的节目单"""
         programs = xml_tree.xpath("//programme")
         for program in programs:
-            channel_id = program.get("channel", "")
-            
-            # 首先检查频道ID是否在保留列表中
-            if channel_id in self.channel_ids or channel_id in COOL9_ID_MAPPING.values():
-                # 节目单频道ID映射（与频道ID保持一致）
-                if channel_id in COOL9_ID_MAPPING:
-                    program.set("channel", COOL9_ID_MAPPING[channel_id])
+            prog_cid = program.get("channel", "").strip()
+            # 只保留数字ID且存在的节目单
+            if prog_cid.isdigit() and prog_cid in self.channel_ids:
                 self.all_programs.append(program)
 
     def fetch_all_sources(self, sources: List[str]) -> bool:
-        """并发获取所有EPG源数据并处理"""
-        successful_sources = 0
+        """并发获取所有EPG源并处理"""
+        # 第一步：预抓取节目单channel映射
+        self.pre_fetch_program_channels(sources)
         
+        successful_sources = 0
         with ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(sources))) as executor:
             future_to_source = {
                 executor.submit(self.fetch_single_source, source): source 
@@ -323,49 +274,40 @@ class EPGGenerator:
                 try:
                     success, _, xml_tree = future.result()
                     if success and xml_tree is not None:
-                        shandong_count, filtered_count = self.process_channels(xml_tree, source)
+                        self.process_channels(xml_tree, source)
                         self.process_programs(xml_tree)
                         successful_sources += 1
-                        logging.info(f"处理完成: {source} | 山东频道: {shandong_count}个 | 过滤国外: {filtered_count}个")
                         
                 except Exception as e:
                     logging.error(f"处理源数据失败 {source}: {str(e)}")
         
-        return successful_sources > 0
+        if successful_sources == 0:
+            logging.error("所有EPG源处理失败")
+            return False
+        return True
 
     def generate_final_xml(self) -> str:
-        """生成最终的EPG XML文件（按优先级排序）"""
-        # 创建XML根节点
+        """生成最终EPG XML文件"""
         xml_declare = f'''<?xml version="1.0" encoding="UTF-8"?>
-<tv generator-info-name="optimized-epg-generator" 
+<tv generator-info-name="domestic-epg-generator" 
     generator-info-url="https://github.com/fxq12345/epg" 
     last-update="{time.strftime("%Y%m%d%H%M%S")}">'''
         
         root = etree.fromstring(f"{xml_declare}</tv>".encode("utf-8"))
         
-        # 按优先级添加频道（山东本地→央视→其他卫视→其他频道）
-        insert_position = 0
-        for category, _ in CHANNEL_PRIORITY:
-            for channel in self.priority_channels[category]:
-                root.insert(insert_position, channel)
-                insert_position += 1
-                
-        # 添加其他国内频道
-        for channel in self.other_channels:
-            root.insert(insert_position, channel)
-            insert_position += 1
+        for channel in self.all_channels:
+            root.append(channel)
             
-        # 添加所有节目单
         for program in self.all_programs:
             root.append(program)
             
         return etree.tostring(root, encoding="utf-8", pretty_print=True).decode("utf-8")
 
     def save_epg_files(self, xml_content: str):
-        """保存EPG文件（XML+GZIP），清理旧文件"""
+        """保存EPG文件"""
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         
-        # 清理旧文件，避免占用空间
+        # 清理旧文件
         for f in os.listdir(OUTPUT_DIR):
             if f.endswith(('.xml', '.gz', '.log')):
                 try:
@@ -373,13 +315,12 @@ class EPGGenerator:
                 except Exception as e:
                     logging.warning(f"删除旧文件失败 {f}: {str(e)}")
         
-        # 保存XML文件
+        # 保存XML和GZIP
         xml_path = os.path.join(OUTPUT_DIR, "epg.xml")
         with open(xml_path, "w", encoding="utf-8") as f:
             f.write(xml_content)
         xml_size = os.path.getsize(xml_path)
         
-        # 保存GZIP压缩文件（节省空间，机顶盒支持自动解压）
         gz_path = os.path.join(OUTPUT_DIR, "epg.gz")
         with gzip.open(gz_path, "wb") as f:
             f.write(xml_content.encode("utf-8"))
@@ -388,47 +329,32 @@ class EPGGenerator:
         logging.info(f"EPG文件生成完成: XML={xml_size}字节, GZIP={gz_size}字节")
 
     def print_statistics(self):
-        """打印详细统计报告，方便核对"""
+        """打印统计报告"""
         total_channels = len(self.channel_ids)
         total_programs = len(self.all_programs)
         
-        logging.info("\n" + "="*60)
+        logging.info("\n" + "="*50)
         logging.info("📊 EPG生成统计报告")
-        logging.info("="*60)
-        
-        for category, _ in CHANNEL_PRIORITY:
-            count = len(self.priority_channels[category])
-            logging.info(f"  {category}: {count}个频道")
-            
-        other_count = len(self.other_channels)
-        logging.info(f"  其他国内频道: {other_count}个")
-        logging.info(f"  总频道数: {total_channels}个")
-        logging.info(f"  总节目数: {total_programs}个")
-        logging.info(f"  过滤国外频道: {self.filtered_foreign_count}个")
-        logging.info("="*60)
+        logging.info("="*50)
+        logging.info(f"  最终保留频道数: {total_channels}个")
+        logging.info(f"  最终保留节目单数: {total_programs}个")
+        logging.info(f"  自动关联名称→数字ID数: {len(self.name_to_final_id)}个")
+        logging.info("="*50)
 
     def run(self):
-        """主运行方法，统一调度所有流程"""
+        """主运行方法"""
         start_time = time.time()
         logging.info("=== EPG生成开始 ===")
         
         try:
-            # 读取配置文件中的EPG源
             sources = self.read_epg_sources()
-            logging.info(f"读取到{len(sources)}个EPG源")
+            logging.info(f"读取到{len(sources)}个有效EPG源")
             
-            # 并发获取并处理所有源数据
             if not self.fetch_all_sources(sources):
-                logging.error("所有EPG源获取失败，程序退出")
                 return False
                 
-            # 生成最终的XML内容
             xml_content = self.generate_final_xml()
-            
-            # 保存文件（XML+GZIP）
             self.save_epg_files(xml_content)
-            
-            # 输出统计报告
             self.print_statistics()
             
             total_time = time.time() - start_time
@@ -440,7 +366,7 @@ class EPGGenerator:
             return False
 
 def main():
-    """主函数，程序入口"""
+    """主函数入口"""
     generator = EPGGenerator()
     success = generator.run()
     exit(0 if success else 1)
