@@ -301,13 +301,13 @@ class EPGGenerator:
                     is_ai_series = "爱" in channel_name or "iHOT" in channel_name.upper()
                     
                     if is_ai_series:
-                        # 爱系列：加24小时（因为慢了一天）← 已修复！
+                        # 爱系列：加24小时（因为慢了一天）
                         self.adjust_program_time(program, hours=+24)
                         ai_count += 1
                         logging.info(f"爱系列 {channel_name} 时间调整 +24小时")
                     else:
-                        # 其他频道：加8小时（UTC -> 北京时间）
-                        self.adjust_program_time(program, hours=+8)
+                        # 其他频道：不调整时间（恢复正常）← 仅改此处：+8 → 0
+                        self.adjust_program_time(program, hours=0)
                         other_count += 1
                 
                 self.all_programs.append(program)
