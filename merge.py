@@ -3,6 +3,7 @@ import gzip
 import re
 import time
 import logging
+from datetime import datetime, timedelta
 from typing import List, Dict, Set, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -248,14 +249,72 @@ class EPGGenerator:
         logging.info(f"从{source}处理到{add_count}个新频道")
         return add_count
 
+    def get_channel_name_by_id(self, channel_id: str) -> str:
+        """根据频道ID获取频道名称"""
+        for channel in self.all_channels:
+            if channel.get("id", "") == channel_id:
+                display_names = channel.xpath(".//display-name/text()")
+                if display_names:
+                    return display_names[0].strip()
+        return ""
+
+    def adjust_program_time(self, program, days=0, hours=0):
+        """调整节目时间"""
+        for attr in ["start", "stop"]:
+            time_str = program.get(attr, "")
+            if time_str and ' ' in time_str:
+                time_part, tz = time_str.split(' ')
+                if len(time_part) >= 14:
+                    try:
+                        dt = datetime.strptime(time_part[:14], "%Y%m%d%H%M%S")
+                        
+                        # 记录原始时间（用于日志）
+                        original = dt.strftime("%m-%d %H:%M")
+                        
+                        dt = dt + timedelta(days=days, hours=hours)
+                        new_time = dt.strftime("%Y%m%d%H%M%S") + " " + tz
+                        program.set(attr, new_time)
+                        
+                        # 记录调整详情
+                        adjusted = dt.strftime("%m-%d %H:%M")
+                        logging.debug(f"时间调整: {original} -> {adjusted} ({days:+d}天 {hours:+d}小时)")
+                        
+                    except Exception as e:
+                        logging.warning(f"时间调整失败 {time_str}: {e}")
+
     def process_programs(self, xml_tree):
-        """处理节目单：仅保留数字ID匹配的节目单"""
+        """处理节目单：修正时间问题"""
         programs = xml_tree.xpath("//programme")
+        
+        ai_count = 0
+        other_count = 0
+        
         for program in programs:
             prog_cid = program.get("channel", "").strip()
-            # 只保留数字ID且存在的节目单
+            
             if prog_cid.isdigit() and prog_cid in self.channel_ids:
+                # 获取频道名称
+                channel_name = self.get_channel_name_by_id(prog_cid)
+                
+                if channel_name:
+                    # 判断是否为爱系列
+                    is_ai_series = "爱" in channel_name or "iHOT" in channel_name.upper()
+                    
+                    if is_ai_series:
+                        # 爱系列：减24小时（因为快了一天）
+                        self.adjust_program_time(program, hours=-24)
+                        ai_count += 1
+                        logging.debug(f"爱系列 {channel_name} 时间调整 -24小时")
+                    else:
+                        # 其他频道：加8小时（UTC -> 北京时间）
+                        self.adjust_program_time(program, hours=+8)
+                        other_count += 1
+                
                 self.all_programs.append(program)
+        
+        # 添加统计信息
+        if ai_count > 0 or other_count > 0:
+            logging.info(f"时间调整统计: 爱系列 {ai_count}个, 其他频道 {other_count}个")
 
     def fetch_all_sources(self, sources: List[str]) -> bool:
         """并发获取所有EPG源并处理"""
@@ -345,6 +404,10 @@ class EPGGenerator:
         """主运行方法"""
         start_time = time.time()
         logging.info("=== EPG生成开始 ===")
+        
+        # 添加当前时间信息
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        logging.info(f"当前系统时间: {current_time}")
         
         try:
             sources = self.read_epg_sources()
