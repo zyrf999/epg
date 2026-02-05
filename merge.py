@@ -269,14 +269,14 @@ class EPGGenerator:
                         dt = datetime.strptime(time_part[:14], "%Y%m%d%H%M%S")
                         
                         # 记录原始时间（用于日志）
-                        original = dt.strftime("%m-%d %H:%M")
+                        original = dt.strftime("%Y-%m-%d %H:%M")
                         
                         dt = dt + timedelta(days=days, hours=hours)
                         new_time = dt.strftime("%Y%m%d%H%M%S") + " " + tz
                         program.set(attr, new_time)
                         
                         # 记录调整详情
-                        adjusted = dt.strftime("%m-%d %H:%M")
+                        adjusted = dt.strftime("%Y-%m-%d %H:%M")
                         logging.debug(f"时间调整: {original} -> {adjusted} ({days:+d}天 {hours:+d}小时)")
                         
                     except Exception as e:
@@ -301,10 +301,10 @@ class EPGGenerator:
                     is_ai_series = "爱" in channel_name or "iHOT" in channel_name.upper()
                     
                     if is_ai_series:
-                        # 爱系列：减24小时（因为快了一天）
-                        self.adjust_program_time(program, hours=-24)
+                        # 爱系列：加24小时（因为慢了一天）← 已修复！
+                        self.adjust_program_time(program, hours=+24)
                         ai_count += 1
-                        logging.debug(f"爱系列 {channel_name} 时间调整 -24小时")
+                        logging.info(f"爱系列 {channel_name} 时间调整 +24小时")
                     else:
                         # 其他频道：加8小时（UTC -> 北京时间）
                         self.adjust_program_time(program, hours=+8)
