@@ -321,11 +321,13 @@ class EPGGenerator:
         return True
 
     def generate_final_xml(self) -> str:
-        """生成最终的EPG XML文件"""
+        """生成最终的EPG XML文件（已修复XML语法错误）"""
+        # 修复点：生成完整的根节点，避免XML解析错误
         xml_declare = f'''<?xml version="1.0" encoding="UTF-8"?>
 <tv generator-info-name="domestic-epg-generator" 
     generator-info-url="https://github.com/fxq12345/epg" 
-    last-update="{time.strftime("%Y%m%d%H%M%S")}">'''
+    last-update="{time.strftime("%Y%m%d%H%M%S")}">
+</tv>'''
         root = etree.fromstring(xml_declare.encode('utf-8'))
         for channel in self.all_channels:
             root.append(channel)
