@@ -30,13 +30,14 @@ logging.basicConfig(
     ]
 )
 
-# 仅保留必要的手动映射（不确定的可以全部删除，留空{}）
+# 补全河南/河北/北京卫视映射（解决匹配不上问题）
 COOL9_ID_MAPPING = {
     "89": "山东卫视", "221": "山东教育", "381": "山东新闻", 
     "382": "山东农科", "383": "山东齐鲁", "384": "山东文旅",
     "1": "CCTV1", "2": "CCTV2", "3": "CCTV3", "4": "CCTV4", 
     "5": "CCTV5", "6": "CCTV6", "7": "CCTV7", "8": "CCTV8",
-    "9": "CCTV9", "10": "CCTV10"
+    "9": "CCTV9", "10": "CCTV10",
+    "21": "北京卫视", "22": "河南卫视", "23": "河北卫视"  # 重点补全三个卫视
 }
 
 # 国外频道关键词黑名单（命中则过滤）
@@ -207,17 +208,14 @@ class EPGGenerator:
             if any(kw in channel_name for kw in DOMESTIC_SPECIAL):
                 pass
             
-            # 核心修改点1：对所有频道都尝试从预抓取映射中获取数字ID
+            # 优先从预抓取映射中获取数字ID
             final_cid = original_cid
-            
-            # 首先尝试从预抓取映射中查找
             if normalized_name in self.program_channel_map:
                 final_cid = self.program_channel_map[normalized_name]
                 logging.debug(f"从预抓取映射中找到匹配: '{normalized_name}' -> {final_cid}")
             
-            # 如果没找到，并且是NEWTV系列，再尝试其他方法
+            # NEWTV系列单独处理
             elif "NEWTV" in normalized_name or "NEW" in normalized_name:
-                # 若预抓取失败，尝试从当前源节目单提取
                 programs = xml_tree.xpath('//programme[contains(@channel, "{}")]'.format(normalized_name[:4]))
                 if programs:
                     final_cid = programs[0].get("channel", "").strip()
@@ -231,8 +229,7 @@ class EPGGenerator:
                 elif channel_name in COOL9_ID_MAPPING:
                     final_cid = COOL9_ID_MAPPING[channel_name]
                 
-                # 核心修改点2：确保最终ID是数字
-                # 如果不是数字，尝试从预抓取映射中查找
+                # 确保最终ID是数字
                 if not final_cid.isdigit() and normalized_name in self.program_channel_map:
                     final_cid = self.program_channel_map[normalized_name]
             
@@ -267,15 +264,13 @@ class EPGGenerator:
                 if len(time_part) >= 14:
                     try:
                         dt = datetime.strptime(time_part[:14], "%Y%m%d%H%M%S")
-                        
-                        # 记录原始时间（用于日志）
+                        # 记录原始时间
                         original = dt.strftime("%Y-%m-%d %H:%M")
-                        
+                        # 时间偏移计算
                         dt = dt + timedelta(days=days, hours=hours)
                         new_time = dt.strftime("%Y%m%d%H%M%S") + " " + tz
                         program.set(attr, new_time)
-                        
-                        # 记录调整详情
+                        # 记录调整后时间
                         adjusted = dt.strftime("%Y-%m-%d %H:%M")
                         logging.debug(f"时间调整: {original} -> {adjusted} ({days:+d}天 {hours:+d}小时)")
                         
@@ -283,7 +278,7 @@ class EPGGenerator:
                         logging.warning(f"时间调整失败 {time_str}: {e}")
 
     def process_programs(self, xml_tree):
-        """处理节目单：修正时间问题"""
+        """处理节目单：核心修改→爱系列+8小时，其他频道0调整"""
         programs = xml_tree.xpath("//programme")
         
         ai_count = 0
@@ -301,24 +296,24 @@ class EPGGenerator:
                     is_ai_series = "爱" in channel_name or "iHOT" in channel_name.upper()
                     
                     if is_ai_series:
-                        # 爱系列：加24小时（因为慢了一天）
-                        self.adjust_program_time(program, hours=+24)
+                        # 爱系列：+8小时（核心需求）
+                        self.adjust_program_time(program, hours=+8)
                         ai_count += 1
-                        logging.info(f"爱系列 {channel_name} 时间调整 +24小时")
+                        logging.info(f"爱系列 {channel_name} 时间调整 +8小时")
                     else:
-                        # 其他频道：不调整时间（恢复正常）← 仅改此处：+8 → 0
+                        # 其他频道：0调整，保持原始时间
                         self.adjust_program_time(program, hours=0)
                         other_count += 1
                 
                 self.all_programs.append(program)
         
-        # 添加统计信息
+        # 时间调整统计
         if ai_count > 0 or other_count > 0:
             logging.info(f"时间调整统计: 爱系列 {ai_count}个, 其他频道 {other_count}个")
 
     def fetch_all_sources(self, sources: List[str]) -> bool:
         """并发获取所有EPG源并处理"""
-        # 第一步：预抓取节目单channel映射
+        # 预抓取节目单channel映射
         self.pre_fetch_program_channels(sources)
         
         successful_sources = 0
@@ -363,7 +358,7 @@ class EPGGenerator:
         return etree.tostring(root, encoding="utf-8", pretty_print=True).decode("utf-8")
 
     def save_epg_files(self, xml_content: str):
-        """保存EPG文件"""
+        """保存EPG文件（XML+GZIP）"""
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         
         # 清理旧文件
@@ -374,12 +369,13 @@ class EPGGenerator:
                 except Exception as e:
                     logging.warning(f"删除旧文件失败 {f}: {str(e)}")
         
-        # 保存XML和GZIP
+        # 保存XML
         xml_path = os.path.join(OUTPUT_DIR, "epg.xml")
         with open(xml_path, "w", encoding="utf-8") as f:
             f.write(xml_content)
         xml_size = os.path.getsize(xml_path)
         
+        # 保存GZIP
         gz_path = os.path.join(OUTPUT_DIR, "epg.gz")
         with gzip.open(gz_path, "wb") as f:
             f.write(xml_content.encode("utf-8"))
@@ -388,7 +384,7 @@ class EPGGenerator:
         logging.info(f"EPG文件生成完成: XML={xml_size}字节, GZIP={gz_size}字节")
 
     def print_statistics(self):
-        """打印统计报告"""
+        """打印EPG生成统计报告"""
         total_channels = len(self.channel_ids)
         total_programs = len(self.all_programs)
         
@@ -405,7 +401,7 @@ class EPGGenerator:
         start_time = time.time()
         logging.info("=== EPG生成开始 ===")
         
-        # 添加当前时间信息
+        # 打印当前系统时间
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         logging.info(f"当前系统时间: {current_time}")
         
