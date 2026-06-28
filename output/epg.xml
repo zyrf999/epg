@@ -1,4 +1,4 @@
-<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20260628074004">
+<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20260628075522">
 <channel id="1">
 <display-name lang="zh">CCTV1</display-name>
 </channel>
@@ -1679,6 +1679,189 @@
   <channel id="1860">
     <display-name lang="zh">中国教育4台</display-name>
   </channel>
+  <channel id="J">
+    <display-name>J</display-name>
+  </channel>
+  <channel id="JUHD">
+    <display-name>JUHD</display-name>
+  </channel>
+  <channel id="B">
+    <display-name>B</display-name>
+  </channel>
+  <channel id="P">
+    <display-name>P</display-name>
+  </channel>
+  <channel id="CWIN">
+    <display-name>CWIN</display-name>
+  </channel>
+  <channel id="C18">
+    <display-name>C18</display-name>
+  </channel>
+  <channel id="TVG">
+    <display-name>TVG</display-name>
+  </channel>
+  <channel id="CTVC">
+    <display-name>CTVC</display-name>
+  </channel>
+  <channel id="CDR3">
+    <display-name>CDR3</display-name>
+  </channel>
+  <channel id="CCLM">
+    <display-name>CCLM</display-name>
+  </channel>
+  <channel id="CTVS">
+    <display-name>CTVS</display-name>
+  </channel>
+  <channel id="TVO">
+    <display-name>TVO</display-name>
+  </channel>
+  <channel id="CTVE">
+    <display-name>CTVE</display-name>
+  </channel>
+  <channel id="CCOC">
+    <display-name>CCOC</display-name>
+  </channel>
+  <channel id="KID">
+    <display-name>KID</display-name>
+  </channel>
+  <channel id="ZOO">
+    <display-name>ZOO</display-name>
+  </channel>
+  <channel id="CNIKO">
+    <display-name>CNIKO</display-name>
+  </channel>
+  <channel id="CNIJR">
+    <display-name>CNIJR</display-name>
+  </channel>
+  <channel id="CMAM">
+    <display-name>CMAM</display-name>
+  </channel>
+  <channel id="CTHR">
+    <display-name>CTHR</display-name>
+  </channel>
+  <channel id="CCCM">
+    <display-name>CCCM</display-name>
+  </channel>
+  <channel id="CMC">
+    <display-name>CMC</display-name>
+  </channel>
+  <channel id="CRTX">
+    <display-name>CRTX</display-name>
+  </channel>
+  <channel id="CKIX">
+    <display-name>CKIX</display-name>
+  </channel>
+  <channel id="LNH">
+    <display-name>LNH</display-name>
+  </channel>
+  <channel id="LN4">
+    <display-name>LN4</display-name>
+  </channel>
+  <channel id="SMS">
+    <display-name>SMS</display-name>
+  </channel>
+  <channel id="CRTE">
+    <display-name>CRTE</display-name>
+  </channel>
+  <channel id="CJTV">
+    <display-name>CJTV</display-name>
+  </channel>
+  <channel id="CTS1">
+    <display-name>CTS1</display-name>
+  </channel>
+  <channel id="CRE">
+    <display-name>CRE</display-name>
+  </channel>
+  <channel id="FBX">
+    <display-name>FBX</display-name>
+  </channel>
+  <channel id="CMEZ">
+    <display-name>CMEZ</display-name>
+  </channel>
+  <channel id="PCC">
+    <display-name>PCC</display-name>
+  </channel>
+  <channel id="PIN">
+    <display-name>PIN</display-name>
+  </channel>
+  <channel id="PHK">
+    <display-name>PHK</display-name>
+  </channel>
+  <channel id="POPC">
+    <display-name>POPC</display-name>
+  </channel>
+  <channel id="CC1">
+    <display-name>CC1</display-name>
+  </channel>
+  <channel id="CGD">
+    <display-name>CGD</display-name>
+  </channel>
+  <channel id="CGE">
+    <display-name>CGE</display-name>
+  </channel>
+  <channel id="CTSN">
+    <display-name>CTSN</display-name>
+  </channel>
+  <channel id="CCNA">
+    <display-name>CCNA</display-name>
+  </channel>
+  <channel id="CJAZ">
+    <display-name>CJAZ</display-name>
+  </channel>
+  <channel id="CF24">
+    <display-name>CF24</display-name>
+  </channel>
+  <channel id="CDW1">
+    <display-name>CDW1</display-name>
+  </channel>
+  <channel id="CNHK">
+    <display-name>CNHK</display-name>
+  </channel>
+  <channel id="CARI">
+    <display-name>CARI</display-name>
+  </channel>
+  <channel id="STVM">
+    <display-name>STVM</display-name>
+  </channel>
+  <channel id="SDOC">
+    <display-name>SDOC</display-name>
+  </channel>
+  <channel id="EVT3">
+    <display-name>EVT3</display-name>
+  </channel>
+  <channel id="EVT4">
+    <display-name>EVT4</display-name>
+  </channel>
+  <channel id="EVT5">
+    <display-name>EVT5</display-name>
+  </channel>
+  <channel id="EVT6">
+    <display-name>EVT6</display-name>
+  </channel>
+  <channel id="SVAR">
+    <display-name>SVAR</display-name>
+  </channel>
+  <channel id="SEYT">
+    <display-name>SEYT</display-name>
+  </channel>
+  <channel id="SFOO">
+    <display-name>SFOO</display-name>
+  </channel>
+  <channel id="STRA">
+    <display-name>STRA</display-name>
+  </channel>
+  <channel id="SMUS">
+    <display-name>SMUS</display-name>
+  </channel>
+  <channel id="SGOL">
+    <display-name>SGOL</display-name>
+  </channel>
+  <channel id="SSIT">
+    <display-name>SSIT</display-name>
+  </channel>
+  <channel id="SSPT">
+    <display-name>SSPT</display-name>
+  </channel>
   <channel id="CCTV世界地理">
     <display-name lang="zh">CCTV世界地理</display-name>
     <display-name lang="zh">世界地理</display-name>
@@ -2718,189 +2901,6 @@
   <channel id="宜昌综合">
     <display-name lang="zh">宜昌综合</display-name>
     <display-name lang="zh">宜昌综合频道</display-name>
-  </channel>
-  <channel id="J">
-    <display-name>J</display-name>
-  </channel>
-  <channel id="JUHD">
-    <display-name>JUHD</display-name>
-  </channel>
-  <channel id="B">
-    <display-name>B</display-name>
-  </channel>
-  <channel id="P">
-    <display-name>P</display-name>
-  </channel>
-  <channel id="CWIN">
-    <display-name>CWIN</display-name>
-  </channel>
-  <channel id="C18">
-    <display-name>C18</display-name>
-  </channel>
-  <channel id="TVG">
-    <display-name>TVG</display-name>
-  </channel>
-  <channel id="CTVC">
-    <display-name>CTVC</display-name>
-  </channel>
-  <channel id="CDR3">
-    <display-name>CDR3</display-name>
-  </channel>
-  <channel id="CCLM">
-    <display-name>CCLM</display-name>
-  </channel>
-  <channel id="CTVS">
-    <display-name>CTVS</display-name>
-  </channel>
-  <channel id="TVO">
-    <display-name>TVO</display-name>
-  </channel>
-  <channel id="CTVE">
-    <display-name>CTVE</display-name>
-  </channel>
-  <channel id="CCOC">
-    <display-name>CCOC</display-name>
-  </channel>
-  <channel id="KID">
-    <display-name>KID</display-name>
-  </channel>
-  <channel id="ZOO">
-    <display-name>ZOO</display-name>
-  </channel>
-  <channel id="CNIKO">
-    <display-name>CNIKO</display-name>
-  </channel>
-  <channel id="CNIJR">
-    <display-name>CNIJR</display-name>
-  </channel>
-  <channel id="CMAM">
-    <display-name>CMAM</display-name>
-  </channel>
-  <channel id="CTHR">
-    <display-name>CTHR</display-name>
-  </channel>
-  <channel id="CCCM">
-    <display-name>CCCM</display-name>
-  </channel>
-  <channel id="CMC">
-    <display-name>CMC</display-name>
-  </channel>
-  <channel id="CRTX">
-    <display-name>CRTX</display-name>
-  </channel>
-  <channel id="CKIX">
-    <display-name>CKIX</display-name>
-  </channel>
-  <channel id="LNH">
-    <display-name>LNH</display-name>
-  </channel>
-  <channel id="LN4">
-    <display-name>LN4</display-name>
-  </channel>
-  <channel id="SMS">
-    <display-name>SMS</display-name>
-  </channel>
-  <channel id="CRTE">
-    <display-name>CRTE</display-name>
-  </channel>
-  <channel id="CJTV">
-    <display-name>CJTV</display-name>
-  </channel>
-  <channel id="CTS1">
-    <display-name>CTS1</display-name>
-  </channel>
-  <channel id="CRE">
-    <display-name>CRE</display-name>
-  </channel>
-  <channel id="FBX">
-    <display-name>FBX</display-name>
-  </channel>
-  <channel id="CMEZ">
-    <display-name>CMEZ</display-name>
-  </channel>
-  <channel id="PCC">
-    <display-name>PCC</display-name>
-  </channel>
-  <channel id="PIN">
-    <display-name>PIN</display-name>
-  </channel>
-  <channel id="PHK">
-    <display-name>PHK</display-name>
-  </channel>
-  <channel id="POPC">
-    <display-name>POPC</display-name>
-  </channel>
-  <channel id="CC1">
-    <display-name>CC1</display-name>
-  </channel>
-  <channel id="CGD">
-    <display-name>CGD</display-name>
-  </channel>
-  <channel id="CGE">
-    <display-name>CGE</display-name>
-  </channel>
-  <channel id="CTSN">
-    <display-name>CTSN</display-name>
-  </channel>
-  <channel id="CCNA">
-    <display-name>CCNA</display-name>
-  </channel>
-  <channel id="CJAZ">
-    <display-name>CJAZ</display-name>
-  </channel>
-  <channel id="CF24">
-    <display-name>CF24</display-name>
-  </channel>
-  <channel id="CDW1">
-    <display-name>CDW1</display-name>
-  </channel>
-  <channel id="CNHK">
-    <display-name>CNHK</display-name>
-  </channel>
-  <channel id="CARI">
-    <display-name>CARI</display-name>
-  </channel>
-  <channel id="STVM">
-    <display-name>STVM</display-name>
-  </channel>
-  <channel id="SDOC">
-    <display-name>SDOC</display-name>
-  </channel>
-  <channel id="EVT3">
-    <display-name>EVT3</display-name>
-  </channel>
-  <channel id="EVT4">
-    <display-name>EVT4</display-name>
-  </channel>
-  <channel id="EVT5">
-    <display-name>EVT5</display-name>
-  </channel>
-  <channel id="EVT6">
-    <display-name>EVT6</display-name>
-  </channel>
-  <channel id="SVAR">
-    <display-name>SVAR</display-name>
-  </channel>
-  <channel id="SEYT">
-    <display-name>SEYT</display-name>
-  </channel>
-  <channel id="SFOO">
-    <display-name>SFOO</display-name>
-  </channel>
-  <channel id="STRA">
-    <display-name>STRA</display-name>
-  </channel>
-  <channel id="SMUS">
-    <display-name>SMUS</display-name>
-  </channel>
-  <channel id="SGOL">
-    <display-name>SGOL</display-name>
-  </channel>
-  <channel id="SSIT">
-    <display-name>SSIT</display-name>
-  </channel>
-  <channel id="SSPT">
-    <display-name>SSPT</display-name>
   </channel>
   <programme start="20260622000000 +0800" stop="20260622005000 +0800" channel="1">
 <title lang="zh">开始</title>
