@@ -1,4 +1,4 @@
-<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20260914200345">
+<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20260915092014">
 <channel id="1">
 <display-name lang="zh">CCTV1</display-name>
 </channel>
@@ -1529,46 +1529,121 @@
 <channel id="9999">
 <display-name lang="zh">noepg</display-name>
 </channel>
-<channel id="37">
-    <display-name lang="zh">旅游卫视</display-name>
-  </channel>
-  <channel id="65">
-    <display-name lang="zh">黄河卫视</display-name>
-  </channel>
-  <channel id="73">
-    <display-name lang="zh">中国教育1台</display-name>
-  </channel>
-  <channel id="74">
-    <display-name lang="zh">中国教育2台</display-name>
-  </channel>
-  <channel id="1639">
-    <display-name lang="zh">CHC高清电影</display-name>
-  </channel>
-  <channel id="1642">
-    <display-name lang="zh">求索记录</display-name>
-  </channel>
-  <channel id="1644">
-    <display-name lang="zh">CHC家庭电影</display-name>
-  </channel>
-  <channel id="1645">
-    <display-name lang="zh">梨园</display-name>
-  </channel>
-  <channel id="1658">
-    <display-name lang="zh">央视精品</display-name>
-  </channel>
-  <channel id="1671">
-    <display-name lang="zh">证券资讯</display-name>
-  </channel>
-  <channel id="1685">
-    <display-name lang="zh">书画频道</display-name>
-  </channel>
-  <channel id="1712">
-    <display-name lang="zh">财富天下</display-name>
-  </channel>
-  <channel id="1860">
-    <display-name lang="zh">中国教育4台</display-name>
-  </channel>
-  <channel id="J">
+<channel id="4K少儿专区">
+		<display-name lang="zh">4K少儿专区</display-name>
+	</channel>
+	<channel id="4K纪实">
+		<display-name lang="zh">4K纪实专区</display-name>
+	</channel>
+	<channel id="4K视界专区">
+		<display-name lang="zh">4K视界专区</display-name>
+	</channel>
+	<channel id="C">
+		<display-name lang="zh">C</display-name>
+	</channel>
+	<channel id="CCTV5+">
+		<display-name lang="zh">CCTV5plus</display-name>
+	</channel>
+	<channel id="CDTV1">
+		<display-name lang="zh">CDTV1</display-name>
+	</channel>
+	<channel id="CDTV2">
+		<display-name lang="zh">CDTV2</display-name>
+	</channel>
+	<channel id="CDTV3">
+		<display-name lang="zh">CDTV3</display-name>
+	</channel>
+	<channel id="CDTV4">
+		<display-name lang="zh">CDTV4</display-name>
+	</channel>
+	<channel id="CDTV5">
+		<display-name lang="zh">CDTV5</display-name>
+	</channel>
+	<channel id="CDTV6">
+		<display-name lang="zh">CDTV6</display-name>
+	</channel>
+	<channel id="CGTN英语">
+		<display-name lang="zh">CGTN英语</display-name>
+	</channel>
+	<channel id="CGTN西班牙语">
+		<display-name lang="zh">CGTN西班牙语</display-name>
+	</channel>
+	<channel id="DTV">
+		<display-name lang="zh">DTV</display-name>
+	</channel>
+	<channel id="SCTV2">
+		<display-name lang="zh">SCTV2</display-name>
+	</channel>
+	<channel id="SCTV3">
+		<display-name lang="zh">SCTV3</display-name>
+	</channel>
+	<channel id="SCTV4">
+		<display-name lang="zh">SCTV4</display-name>
+	</channel>
+	<channel id="SCTV5">
+		<display-name lang="zh">SCTV5</display-name>
+	</channel>
+	<channel id="SCTV7">
+		<display-name lang="zh">SCTV7</display-name>
+	</channel>
+	<channel id="SCTV科教">
+		<display-name lang="zh">SCTV科教</display-name>
+	</channel>
+	<channel id="1685">
+		<display-name lang="zh">书画频道</display-name>
+	</channel>
+	<channel id="全球大片专区">
+		<display-name lang="zh">全球大片专区</display-name>
+	</channel>
+	<channel id="华语影院专区">
+		<display-name lang="zh">华语影院专区</display-name>
+	</channel>
+	<channel id="宝宝动画专区">
+		<display-name lang="zh">宝宝动画专区</display-name>
+	</channel>
+	<channel id="家庭理财">
+		<display-name lang="zh">家庭理财</display-name>
+	</channel>
+	<channel id="山东教育卫视">
+		<display-name lang="zh">山东教育卫视</display-name>
+	</channel>
+	<channel id="星光院线专区">
+		<display-name lang="zh">星光院线专区</display-name>
+	</channel>
+	<channel id="1645">
+		<display-name lang="zh">梨园</display-name>
+	</channel>
+	<channel id="欢笑剧场">
+		<display-name lang="zh">欢笑剧场</display-name>
+	</channel>
+	<channel id="求索频道">
+		<display-name lang="zh">求索频道</display-name>
+	</channel>
+	<channel id="热播剧场">
+		<display-name lang="zh">热播剧场专区</display-name>
+	</channel>
+	<channel id="百变课堂专区">
+		<display-name lang="zh">百变课堂专区</display-name>
+	</channel>
+	<channel id="精选">
+		<display-name lang="zh">戏曲精选专区</display-name>
+	</channel>
+	<channel id="经典电影">
+		<display-name lang="zh">经典电影专区</display-name>
+	</channel>
+	<channel id="谍战剧场专区">
+		<display-name lang="zh">谍战剧场专区</display-name>
+	</channel>
+	<channel id="1712">
+		<display-name lang="zh">财富天下</display-name>
+	</channel>
+	<channel id="青春动漫专区">
+		<display-name lang="zh">青春动漫专区</display-name>
+	</channel>
+	<channel id="魅力时尚">
+		<display-name lang="zh">魅力时尚专区</display-name>
+	</channel>
+	<channel id="J">
     <display-name>J</display-name>
   </channel>
   <channel id="JUHD">
@@ -1576,9 +1651,6 @@
   </channel>
   <channel id="B">
     <display-name>B</display-name>
-  </channel>
-  <channel id="C">
-    <display-name>C</display-name>
   </channel>
   <channel id="P">
     <display-name>P</display-name>
@@ -1664,9 +1736,6 @@
   <channel id="CRE">
     <display-name>CRE</display-name>
   </channel>
-  <channel id="DTV">
-    <display-name>DTV</display-name>
-  </channel>
   <channel id="POPC">
     <display-name>POPC</display-name>
   </channel>
@@ -1742,109 +1811,37 @@
   <channel id="SSPT">
     <display-name>SSPT</display-name>
   </channel>
-  <channel id="4K少儿专区">
-		<display-name lang="zh">4K少儿专区</display-name>
-	</channel>
-	<channel id="4K纪实专区">
-		<display-name lang="zh">4K纪实专区</display-name>
-	</channel>
-	<channel id="4K视界专区">
-		<display-name lang="zh">4K视界专区</display-name>
-	</channel>
-	<channel id="CCTV5+">
-		<display-name lang="zh">CCTV5plus</display-name>
-	</channel>
-	<channel id="CDTV1">
-		<display-name lang="zh">CDTV1</display-name>
-	</channel>
-	<channel id="CDTV2">
-		<display-name lang="zh">CDTV2</display-name>
-	</channel>
-	<channel id="CDTV3">
-		<display-name lang="zh">CDTV3</display-name>
-	</channel>
-	<channel id="CDTV4">
-		<display-name lang="zh">CDTV4</display-name>
-	</channel>
-	<channel id="CDTV5">
-		<display-name lang="zh">CDTV5</display-name>
-	</channel>
-	<channel id="CDTV6">
-		<display-name lang="zh">CDTV6</display-name>
-	</channel>
-	<channel id="CGTN英语">
-		<display-name lang="zh">CGTN英语</display-name>
-	</channel>
-	<channel id="CGTN西班牙语">
-		<display-name lang="zh">CGTN西班牙语</display-name>
-	</channel>
-	<channel id="SCTV2">
-		<display-name lang="zh">SCTV2</display-name>
-	</channel>
-	<channel id="SCTV3">
-		<display-name lang="zh">SCTV3</display-name>
-	</channel>
-	<channel id="SCTV4">
-		<display-name lang="zh">SCTV4</display-name>
-	</channel>
-	<channel id="SCTV5">
-		<display-name lang="zh">SCTV5</display-name>
-	</channel>
-	<channel id="SCTV7">
-		<display-name lang="zh">SCTV7</display-name>
-	</channel>
-	<channel id="SCTV科教">
-		<display-name lang="zh">SCTV科教</display-name>
-	</channel>
-	<channel id="全球大片专区">
-		<display-name lang="zh">全球大片专区</display-name>
-	</channel>
-	<channel id="华语影院专区">
-		<display-name lang="zh">华语影院专区</display-name>
-	</channel>
-	<channel id="宝宝动画专区">
-		<display-name lang="zh">宝宝动画专区</display-name>
-	</channel>
-	<channel id="家庭理财">
-		<display-name lang="zh">家庭理财</display-name>
-	</channel>
-	<channel id="山东教育卫视">
-		<display-name lang="zh">山东教育卫视</display-name>
-	</channel>
-	<channel id="戏曲精选专区">
-		<display-name lang="zh">戏曲精选专区</display-name>
-	</channel>
-	<channel id="星光院线专区">
-		<display-name lang="zh">星光院线专区</display-name>
-	</channel>
-	<channel id="欢笑剧场">
-		<display-name lang="zh">欢笑剧场</display-name>
-	</channel>
-	<channel id="求索频道">
-		<display-name lang="zh">求索频道</display-name>
-	</channel>
-	<channel id="热播剧场">
-		<display-name lang="zh">热播剧场专区</display-name>
-	</channel>
-	<channel id="百变课堂专区">
-		<display-name lang="zh">百变课堂专区</display-name>
-	</channel>
-	<channel id="看天下精选专区">
-		<display-name lang="zh">看天下精选专区</display-name>
-	</channel>
-	<channel id="经典电影">
-		<display-name lang="zh">经典电影专区</display-name>
-	</channel>
-	<channel id="谍战剧场专区">
-		<display-name lang="zh">谍战剧场专区</display-name>
-	</channel>
-	<channel id="青春动漫专区">
-		<display-name lang="zh">青春动漫专区</display-name>
-	</channel>
-	<channel id="魅力时尚">
-		<display-name lang="zh">魅力时尚专区</display-name>
-	</channel>
-	<programme start="20260909000000 +0800" stop="20260909001500 +0800" channel="1">
+  <channel id="37">
+    <display-name lang="zh">旅游卫视</display-name>
+  </channel>
+  <channel id="65">
+    <display-name lang="zh">黄河卫视</display-name>
+  </channel>
+  <channel id="73">
+    <display-name lang="zh">中国教育1台</display-name>
+  </channel>
+  <channel id="74">
+    <display-name lang="zh">中国教育2台</display-name>
+  </channel>
+  <channel id="1639">
+    <display-name lang="zh">CHC高清电影</display-name>
+  </channel>
+  <channel id="1642">
+    <display-name lang="zh">求索记录</display-name>
+  </channel>
+  <channel id="1644">
+    <display-name lang="zh">CHC家庭电影</display-name>
+  </channel>
+  <channel id="1658">
+    <display-name lang="zh">央视精品</display-name>
+  </channel>
+  <channel id="1671">
+    <display-name lang="zh">证券资讯</display-name>
+  </channel>
+  <channel id="1860">
+    <display-name lang="zh">中国教育4台</display-name>
+  </channel>
+  <programme start="20260909000000 +0800" stop="20260909001500 +0800" channel="1">
 <title lang="zh">开始</title>
 </programme>
 <programme start="20260909001500 +0800" stop="20260909010000 +0800" channel="1">
@@ -117401,8 +117398,134 @@
 <programme start="20260914235000 +0800" stop="20260914235500 +0800" channel="189">
 <title lang="zh">天气报告及退休Chill级歎世界</title>
 </programme>
-<programme start="20260914235500 +0800" stop="20260914235959 +0800" channel="189">
+<programme start="20260914235500 +0800" stop="20260915010000 +0800" channel="189">
 <title lang="zh">澳娱综合呈献十月初五的月光6</title>
+</programme>
+<programme start="20260915010000 +0800" stop="20260915013500 +0800" channel="189">
+<title lang="zh">东张西望</title>
+</programme>
+<programme start="20260915013500 +0800" stop="20260915022000 +0800" channel="189">
+<title lang="zh">流行都市</title>
+</programme>
+<programme start="20260915022000 +0800" stop="20260915025000 +0800" channel="189">
+<title lang="zh">懿想得到</title>
+</programme>
+<programme start="20260915025000 +0800" stop="20260915034500 +0800" channel="189">
+<title lang="zh">天梯15</title>
+</programme>
+<programme start="20260915034500 +0800" stop="20260915041000 +0800" channel="189">
+<title lang="zh">高朋满座184</title>
+</programme>
+<programme start="20260915041000 +0800" stop="20260915050000 +0800" channel="189">
+<title lang="zh">射鵰英雄传之铁血丹心29</title>
+</programme>
+<programme start="20260915050000 +0800" stop="20260915060000 +0800" channel="189">
+<title lang="zh">是日播映完毕</title>
+</programme>
+<programme start="20260915060000 +0800" stop="20260915074000 +0800" channel="189">
+<title lang="zh">香港早晨及交通消息</title>
+</programme>
+<programme start="20260915074000 +0800" stop="20260915074500 +0800" channel="189">
+<title lang="zh">环球新闻档案</title>
+</programme>
+<programme start="20260915074500 +0800" stop="20260915081000 +0800" channel="189">
+<title lang="zh">香港早晨及交通消息</title>
+</programme>
+<programme start="20260915081000 +0800" stop="20260915084000 +0800" channel="189">
+<title lang="zh">香港早晨及交通消息</title>
+</programme>
+<programme start="20260915084000 +0800" stop="20260915090000 +0800" channel="189">
+<title lang="zh">香港早晨</title>
+</programme>
+<programme start="20260915090000 +0800" stop="20260915100000 +0800" channel="189">
+<title lang="zh">交易现场</title>
+</programme>
+<programme start="20260915100000 +0800" stop="20260915100500 +0800" channel="189">
+<title lang="zh">劲歌推介</title>
+</programme>
+<programme start="20260915100500 +0800" stop="20260915103500 +0800" channel="189">
+<title lang="zh">高朋满座185</title>
+</programme>
+<programme start="20260915103500 +0800" stop="20260915114000 +0800" channel="189">
+<title lang="zh">射鵰英雄传之铁血丹心30</title>
+</programme>
+<programme start="20260915114000 +0800" stop="20260915121500 +0800" channel="189">
+<title lang="zh">交易现场</title>
+</programme>
+<programme start="20260915121500 +0800" stop="20260915130000 +0800" channel="189">
+<title lang="zh">食平3D</title>
+</programme>
+<programme start="20260915130000 +0800" stop="20260915132000 +0800" channel="189">
+<title lang="zh">午间新闻</title>
+</programme>
+<programme start="20260915132000 +0800" stop="20260915141000 +0800" channel="189">
+<title lang="zh">流行都市</title>
+</programme>
+<programme start="20260915141000 +0800" stop="20260915145000 +0800" channel="189">
+<title lang="zh">懿想得到</title>
+</programme>
+<programme start="20260915145000 +0800" stop="20260915155000 +0800" channel="189">
+<title lang="zh">天梯16</title>
+</programme>
+<programme start="20260915155000 +0800" stop="20260915162000 +0800" channel="189">
+<title lang="zh">交易现场</title>
+</programme>
+<programme start="20260915162000 +0800" stop="20260915165000 +0800" channel="189">
+<title lang="zh">樱桃小丸子</title>
+</programme>
+<programme start="20260915165000 +0800" stop="20260915172000 +0800" channel="189">
+<title lang="zh">HandsUp</title>
+</programme>
+<programme start="20260915172000 +0800" stop="20260915175000 +0800" channel="189">
+<title lang="zh">面包超人</title>
+</programme>
+<programme start="20260915175000 +0800" stop="20260915180000 +0800" channel="189">
+<title lang="zh">财经新闻</title>
+</programme>
+<programme start="20260915180000 +0800" stop="20260915182500 +0800" channel="189">
+<title lang="zh">最强生命线</title>
+</programme>
+<programme start="20260915182500 +0800" stop="20260915183000 +0800" channel="189">
+<title lang="zh">新闻档案</title>
+</programme>
+<programme start="20260915183000 +0800" stop="20260915191500 +0800" channel="189">
+<title lang="zh">六点半新闻报道</title>
+</programme>
+<programme start="20260915191500 +0800" stop="20260915192500 +0800" channel="189">
+<title lang="zh">天气报告</title>
+</programme>
+<programme start="20260915192500 +0800" stop="20260915193000 +0800" channel="189">
+<title lang="zh">宏利保险呈献湾区零距离</title>
+</programme>
+<programme start="20260915193000 +0800" stop="20260915200000 +0800" channel="189">
+<title lang="zh">富途讲美股</title>
+</programme>
+<programme start="20260915200000 +0800" stop="20260915203000 +0800" channel="189">
+<title lang="zh">黄道益活络油呈献爱．回家之三代同糖27</title>
+</programme>
+<programme start="20260915203000 +0800" stop="20260915213000 +0800" channel="189">
+<title lang="zh">死有对証7</title>
+</programme>
+<programme start="20260915213000 +0800" stop="20260915223000 +0800" channel="189">
+<title lang="zh">百花杀9</title>
+</programme>
+<programme start="20260915223000 +0800" stop="20260915230000 +0800" channel="189">
+<title lang="zh">蓝朋友‧旅朋友广西篇</title>
+</programme>
+<programme start="20260915230000 +0800" stop="20260915231500 +0800" channel="189">
+<title lang="zh">娱乐头条及环球新闻档案</title>
+</programme>
+<programme start="20260915231500 +0800" stop="20260915234500 +0800" channel="189">
+<title lang="zh">晚间新闻</title>
+</programme>
+<programme start="20260915234500 +0800" stop="20260915235000 +0800" channel="189">
+<title lang="zh">新闻档案</title>
+</programme>
+<programme start="20260915235000 +0800" stop="20260915235500 +0800" channel="189">
+<title lang="zh">天气报告</title>
+</programme>
+<programme start="20260915235500 +0800" stop="20260915235959 +0800" channel="189">
+<title lang="zh">澳娱综合呈献十月初五的月光7</title>
 </programme>
 <programme start="20260909001000 +0800" stop="20260909003000 +0800" channel="190">
 <title lang="zh">晚间新闻</title>
