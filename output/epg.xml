@@ -1,4 +1,4 @@
-<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20260926185221">
+<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20260927095706">
 <channel id="1">
 <display-name lang="zh">CCTV1</display-name>
 </channel>
@@ -1786,9 +1786,6 @@
 	</channel>
 	<channel id="SCTV科教">
 		<display-name lang="zh">SCTV科教</display-name>
-	</channel>
-	<channel id="中国交通频道">
-		<display-name lang="zh">中国交通频道</display-name>
 	</channel>
 	<channel id="全球大片专区">
 		<display-name lang="zh">全球大片专区</display-name>
