@@ -1,4 +1,4 @@
-<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20261001204232">
+<tv generator-info-name="domestic-epg-generator" generator-info-url="https://github.com/fxq12345/epg" last-update="20261002102611">
 <channel id="1">
 <display-name lang="zh">CCTV1</display-name>
 </channel>
@@ -1736,7 +1736,7 @@
   <channel id="4K少儿专区">
 		<display-name lang="zh">4K少儿专区</display-name>
 	</channel>
-	<channel id="4K纪实专区">
+	<channel id="4K纪实">
 		<display-name lang="zh">4K纪实专区</display-name>
 	</channel>
 	<channel id="4K视界专区">
@@ -1802,9 +1802,6 @@
 	<channel id="山东教育卫视">
 		<display-name lang="zh">山东教育卫视</display-name>
 	</channel>
-	<channel id="戏曲精选专区">
-		<display-name lang="zh">戏曲精选专区</display-name>
-	</channel>
 	<channel id="星光院线专区">
 		<display-name lang="zh">星光院线专区</display-name>
 	</channel>
@@ -1820,8 +1817,8 @@
 	<channel id="百变课堂专区">
 		<display-name lang="zh">百变课堂专区</display-name>
 	</channel>
-	<channel id="看天下精选专区">
-		<display-name lang="zh">看天下精选专区</display-name>
+	<channel id="精选">
+		<display-name lang="zh">戏曲精选专区</display-name>
 	</channel>
 	<channel id="经典电影">
 		<display-name lang="zh">经典电影专区</display-name>
