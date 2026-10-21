@@ -19,8 +19,8 @@ LOG_FILE = "epg_merge.log"
 MAX_WORKERS = 3
 TIMEOUT = 30
 CORE_RETRY_COUNT = 2
-DAYS_KEEP = 3  # 保留几天节目
-GENERATE_GZ = True  # 是否额外生成gz压缩包
+DAYS_KEEP = 3
+GENERATE_GZ = True
 
 logging.basicConfig(
     level=logging.INFO,
@@ -80,24 +80,39 @@ class EPGGenerator:
         })
         return session
 
-    def read_epg_sources(self) -> List[str]:
+    def clean_ch_name(self, name: str) -> str:
+        name = name.strip()
+        name = re.sub(r'\s+|-', '', name)
+        name = re.sub(r'(高清|HD|hd|4K|超清|综合|频道)', '', name)
+        return name
+
+    def read_epg_sources(self) -> List[Tuple[str, bool]]:
+        """返回 (url, 是否+8小时)"""
         if not os.path.exists(CONFIG_FILE):
             logging.error(f"配置文件不存在: {CONFIG_FILE}")
             raise FileNotFoundError(f"找不到配置文件: {CONFIG_FILE}")
+        sources = []
         try:
             with open(CONFIG_FILE, "r", encoding="utf-8") as f:
-                sources = []
-                for line_num, line in enumerate(f, 1):
-                    line = line.strip()
-                    if line and not line.startswith("#"):
-                        if line.startswith(("http://", "https://")):
-                            sources.append(line)
-                        else:
-                            logging.warning(f"第{line_num}行不是有效链接，跳过：{line}")
+                for line_num, raw_line in enumerate(f, 1):
+                    raw_line = raw_line.strip()
+                    if not raw_line or raw_line.startswith("#"):
+                        continue
+                    parts = raw_line.split("#")
+                    url = parts[0].strip()
+                    need_add8 = False
+                    if len(parts) > 1:
+                        tag = parts[1].strip()
+                        if tag == "tz8":
+                            need_add8 = True
+                    if url.startswith(("http://", "https://")):
+                        sources.append((url, need_add8))
+                    else:
+                        logging.warning(f"第{line_num}行无效链接跳过：{url}")
         except Exception as e:
-            logging.error(f"读取配置文件失败：{str(e)}")
+            logging.error(f"读取配置失败：{str(e)}")
             raise
-        logging.info(f"一共读取到 {len(sources)} 个有效EPG源")
+        logging.info(f"读取到 {len(sources)} 个EPG源")
         return sources
 
     def is_foreign_channel(self, name: str) -> bool:
@@ -110,8 +125,9 @@ class EPGGenerator:
                 return True
         return False
 
-    def fix_xml_time(self, timestr: str) -> str:
-        """UTC时间转北京时间，兼容xmltv时间格式"""
+    def fix_xml_time(self, timestr: str, add8: bool) -> str:
+        if not add8:
+            return timestr
         if not timestr or len(timestr) < 14:
             return timestr
         try:
@@ -135,7 +151,7 @@ class EPGGenerator:
             logging.error(f"拉取/解析源失败【{url}】：{str(e)}")
             return None
 
-    def parse_one_source(self, url: str):
+    def parse_one_source(self, url: str, add8: bool):
         root = self.fetch_and_parse_xml(url)
         if root is None:
             return
@@ -148,9 +164,11 @@ class EPGGenerator:
             if self.is_foreign_channel(ch_name):
                 logging.info(f"过滤境外频道：{ch_name}")
                 continue
+            clean_name = self.clean_ch_name(ch_name)
             final_id = None
             for mid, mname in COOL9_ID_MAPPING.items():
-                if mname in ch_name or ch_name in mname:
+                clean_map_name = self.clean_ch_name(mname)
+                if clean_map_name in clean_name or clean_name in clean_map_name:
                     final_id = mid
                     break
             if final_id is None:
@@ -164,8 +182,6 @@ class EPGGenerator:
                 self.all_channels.append(new_ch)
             self.program_channel_map[cid] = final_id
 
-        now = datetime.now()
-        expire_time = now + timedelta(days=DAYS_KEEP)
         for prog in root.xpath('//programme'):
             orig_cid = prog.get('channel')
             if orig_cid not in self.program_channel_map:
@@ -173,8 +189,8 @@ class EPGGenerator:
             new_cid = self.program_channel_map[orig_cid]
             start_raw = prog.get("start", "")
             stop_raw = prog.get("stop", "")
-            start_fixed = self.fix_xml_time(start_raw)
-            stop_fixed = self.fix_xml_time(stop_raw)
+            start_fixed = self.fix_xml_time(start_raw, add8)
+            stop_fixed = self.fix_xml_time(stop_raw, add8)
             prog.set("channel", new_cid)
             prog.set("start", start_fixed)
             prog.set("stop", stop_fixed)
@@ -186,14 +202,18 @@ class EPGGenerator:
                 self.prog_key_set.add(key)
                 self.all_programs.append(prog)
 
-    def run_fetch_all(self, source_list: List[str]):
+    def run_fetch_all(self, source_list: List[Tuple[str, bool]]):
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            task_map = {executor.submit(self.parse_one_source, url): url for url in source_list}
+            task_map = {
+                executor.submit(self.parse_one_source, url, add8): (url, add8)
+                for url, add8 in source_list
+            }
             for task in as_completed(task_map):
+                url, add8 = task_map[task]
                 try:
                     task.result()
                 except Exception as e:
-                    logging.error(f"任务异常：{task_map[task]} | {e}")
+                    logging.error(f"任务异常：{url} | {e}")
 
     def build_final_xml(self, save_path: str):
         tv_root = etree.Element("tv")
