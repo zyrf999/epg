@@ -372,8 +372,8 @@ class EPGGenerator:
         """程序主运行入口"""
         start_time = time.time()
         logging.info("=== 开始执行EPG合并生成程序 ===")
-        logging.info(f"当前系统时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}")
-        try:
+        logging.info(f"当前系统时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+       try:
             sources = self.read_epg_sources()
             logging.info(f"读取到{len(sources)}个有效EPG源地址")
             if self.fetch_all_sources(sources):
