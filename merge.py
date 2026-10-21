@@ -1,7 +1,6 @@
 import os
 import gzip
 import re
-import time
 import logging
 from datetime import datetime, timedelta
 from typing import List, Dict, Set, Tuple
@@ -19,7 +18,6 @@ LOG_FILE = "epg_merge.log"
 MAX_WORKERS = 3
 TIMEOUT = 30
 CORE_RETRY_COUNT = 2
-DAYS_KEEP = 3
 GENERATE_GZ = True
 
 logging.basicConfig(
@@ -30,18 +28,6 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
-COOL9_ID_MAPPING = {
-    "1": "CCTV1", "2": "CCTV2", "3": "CCTV3", "4": "CCTV4",
-    "5": "CCTV5", "6": "CCTV6", "7": "CCTV7", "8": "CCTV8",
-    "9": "CCTV9", "10": "CCTV10", "11": "CCTV11", "12": "CCTV12",
-    "13": "CCTV13", "14": "CCTV14", "15": "CCTV15", "16": "CCTV16",
-    "21": "北京卫视", "22": "河南卫视", "23": "河北卫视",
-    "24": "湖北卫视", "25": "海南卫视", "26": "贵州卫视", "27": "厦门卫视",
-    "28": "CCTV5+", "29": "峨眉电影", "30": "峨眉电影4K", "31": "北京IPTV4K超清",
-    "32": "淘电影", "33": "淘娱乐", "34": "淘剧场", "35": "淘baby", "36": "淘精彩",
-    "37": "萌宠TV", "38": "优漫卡通"
-}
 
 FOREIGN_KEYWORDS = [
     "BBC", "CNN", "NBC", "FOX", "HBO", "Netflix", "Disney",
@@ -56,12 +42,9 @@ DOMESTIC_SPECIAL = ["popc", "淘", "new", "NEW", "POPC", "超级电影", "IPTV",
 class EPGGenerator:
     def __init__(self):
         self.session = self._create_session()
-        self.channel_ids: Set[str] = set()
-        self.all_channels: List = []
-        self.all_programs: List = []
-        self.name_to_final_id: Dict[str, str] = dict()
-        self.program_channel_map: Dict[str, str] = dict()
-        self.prog_key_set: Set[Tuple[str, str, str]] = set()
+        self.channel_set: Dict[str, etree.Element] = dict()  # key=源原生channel id
+        self.program_list: List[etree.Element] = []
+        self.prog_uniq: Set[Tuple[str, str, str]] = set()
 
     def _create_session(self) -> requests.Session:
         session = requests.Session()
@@ -80,14 +63,8 @@ class EPGGenerator:
         })
         return session
 
-    def clean_ch_name(self, name: str) -> str:
-        name = name.strip()
-        name = re.sub(r'\s+|-', '', name)
-        name = re.sub(r'(高清|HD|hd|4K|超清|综合|频道)', '', name)
-        return name
-
     def read_epg_sources(self) -> List[Tuple[str, bool]]:
-        """返回 (url, 是否+8小时)"""
+        """读取配置，返回 (url, 是否需要+8小时)"""
         if not os.path.exists(CONFIG_FILE):
             logging.error(f"配置文件不存在: {CONFIG_FILE}")
             raise FileNotFoundError(f"找不到配置文件: {CONFIG_FILE}")
@@ -126,6 +103,7 @@ class EPGGenerator:
         return False
 
     def fix_xml_time(self, timestr: str, add8: bool) -> str:
+        """仅标记tz8的源才+8小时，其余原样保留（老脚本行为）"""
         if not add8:
             return timestr
         if not timestr or len(timestr) < 14:
@@ -155,6 +133,7 @@ class EPGGenerator:
         root = self.fetch_and_parse_xml(url)
         if root is None:
             return
+        # 读取channel，保留原生id，过滤境外频道
         for ch in root.xpath('//channel'):
             cid = ch.get('id')
             name_nodes = ch.xpath('./display-name/text()')
@@ -164,43 +143,25 @@ class EPGGenerator:
             if self.is_foreign_channel(ch_name):
                 logging.info(f"过滤境外频道：{ch_name}")
                 continue
-            clean_name = self.clean_ch_name(ch_name)
-            final_id = None
-            for mid, mname in COOL9_ID_MAPPING.items():
-                clean_map_name = self.clean_ch_name(mname)
-                if clean_map_name in clean_name or clean_name in clean_map_name:
-                    final_id = mid
-                    break
-            if final_id is None:
-                final_id = str(len(self.name_to_final_id) + 1000)
-            self.name_to_final_id[ch_name] = final_id
-            if final_id not in self.channel_ids:
-                self.channel_ids.add(final_id)
-                new_ch = etree.Element("channel", attrib={"id": final_id})
-                dn = etree.SubElement(new_ch, "display-name")
-                dn.text = ch_name
-                self.all_channels.append(new_ch)
-            self.program_channel_map[cid] = final_id
-
+            if cid not in self.channel_set:
+                self.channel_set[cid] = ch
+        # 读取节目，按源标记做时间偏移，去重
         for prog in root.xpath('//programme'):
             orig_cid = prog.get('channel')
-            if orig_cid not in self.program_channel_map:
+            if orig_cid not in self.channel_set:
                 continue
-            new_cid = self.program_channel_map[orig_cid]
             start_raw = prog.get("start", "")
             stop_raw = prog.get("stop", "")
             start_fixed = self.fix_xml_time(start_raw, add8)
             stop_fixed = self.fix_xml_time(stop_raw, add8)
-            prog.set("channel", new_cid)
             prog.set("start", start_fixed)
             prog.set("stop", stop_fixed)
-
             title_nodes = prog.xpath('./title/text()')
             title = title_nodes[0].strip() if title_nodes else ""
-            key = (new_cid, start_fixed, title)
-            if key not in self.prog_key_set:
-                self.prog_key_set.add(key)
-                self.all_programs.append(prog)
+            key = (orig_cid, start_fixed, title)
+            if key not in self.prog_uniq:
+                self.prog_uniq.add(key)
+                self.program_list.append(prog)
 
     def run_fetch_all(self, source_list: List[Tuple[str, bool]]):
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -218,9 +179,11 @@ class EPGGenerator:
     def build_final_xml(self, save_path: str):
         tv_root = etree.Element("tv")
         tv_root.set("generator-info-name", "EPG Merge Script")
-        for ch in self.all_channels:
+        # 写入所有channel（原生id）
+        for ch in self.channel_set.values():
             tv_root.append(ch)
-        for p in self.all_programs:
+        # 写入所有节目
+        for p in self.program_list:
             tv_root.append(p)
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         tree = etree.ElementTree(tv_root)
